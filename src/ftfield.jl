@@ -83,7 +83,9 @@ NSEBase.ProjectedField(g::Abstract1DChannelGrid{S, T}, modes) where {S, T} = Pro
 @inline _channel_int(u, ws, v, N) = sum(ws[i]*dot(u[i], v[i]) for i in 1:N)
 @inline _get_mode(modes, Ny, n, m, nx, nz, nt) = @view(modes[(Ny*(n - 1) + 1):Ny*n, m, nx, nz, nt])
 
-function NSEBase.project!(a::ProjectedField{F}, u::VectorField{N, F}) where {S, T, F<:FTField{<:Abstract1DChannelGrid{S, T}}, N}
+NSEBase.project!(a::ProjectedField{<:FTField{G}},
+                 u::VectorField{N, <:FTField{G}}) where {S, T, G<:Abstract1DChannelGrid{S, T}, N} = _project!(a, u, S, N, T)
+function _project!(a, u, S, N, T)
     a .= zero(T)
     @loop_modes S[4] S[3] S[2] for m in axes(a, 1), n in 1:N
         @views @inbounds a[m, _nx, _nz, _nt] += _channel_int(_get_mode(modes(a), S[1], n, m, _nx, _nz, _nt), grid(u).ws, u[n][:, _nx, _nz, _nt], S[1])
@@ -91,7 +93,8 @@ function NSEBase.project!(a::ProjectedField{F}, u::VectorField{N, F}) where {S, 
     return a
 end
 
-function NSEBase.expand!(u::VectorField{N, F}, a::ProjectedField{F}) where {N, S, T, F<:FTField{<:Abstract1DChannelGrid{S, T}}}
+function NSEBase.expand!(u::VectorField{N, <:FTField{G}},
+                         a::ProjectedField{<:FTField{G}}) where {N, S, G<:Abstract1DChannelGrid{S}}
     u .*= 0
     @loop_modes S[4] S[3] S[2] for n in 1:N, m in axes(a, 1)
         @views @inbounds u[n][:, _nx, _nz, _nt] .+= a[m, _nx, _nz, _nt].*_get_mode(modes(a), S[1], n, m, _nx, _nz, _nt)
