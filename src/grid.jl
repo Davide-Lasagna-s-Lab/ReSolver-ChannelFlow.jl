@@ -37,14 +37,14 @@ growto(g::ChannelGrid, N::NTuple{3, Int}) = ChannelGrid(g.y, N..., g.α, g.β, g
 get_fields(g::ChannelGrid) = (g.Dy, g.Dy2, g.ws, g.α, g.β)
 
 # read-write methods
-function save(g::ChannelGrid; path="./grid.jld2")
+function save_grid(g::ChannelGrid; path="./grid.jld2")
     jldopen(path, "w") do f
         f["grid"] = g
     end
     return nothing
 end
 
-function load(path)
+function load_grid(path)
     jldopen(path, "r") do f
         return f["grid"]
     end

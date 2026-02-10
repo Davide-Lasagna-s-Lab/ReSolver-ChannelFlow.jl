@@ -4,9 +4,9 @@ using FFTW, LinearAlgebra, JLD2
 
 using NSEBase
 
-export ChannelGrid, points, growto, get_fields
+export ChannelGrid, points, growto, get_fields, save_grid, load_grid
 export ModeNumber
-export FTField, grid
+export FTField, grid, save_field, load_field
 export Field
 export VectorField
 export ProjectedField, modes, project!, project, expand!, expand

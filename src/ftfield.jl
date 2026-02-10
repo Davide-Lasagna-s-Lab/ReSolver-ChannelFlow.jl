@@ -173,15 +173,14 @@ end
 # ------------------ #
 # read-write methods #
 # ------------------ #
-# TODO: rename to be specific enough to allow export
-function save(a::ProjectedField{<:FTField{<:Abstract1DChannelGrid}}; path="./a.jld2")
+function save_field(a::ProjectedField{<:FTField{<:Abstract1DChannelGrid}}; path="./a.jld2")
     jldopen(path, "w") do f
         f["data"] = parent(a)
     end
     return nothing
 end
 
-function load(g::Abstract1DChannelGrid, modes, path)
+function load_field(g::Abstract1DChannelGrid, modes, path)
     # read coefficients of projected field
     data = jldopen(path, "r") do f
         return f["data"]
