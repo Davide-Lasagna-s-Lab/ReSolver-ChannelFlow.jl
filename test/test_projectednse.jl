@@ -1,11 +1,19 @@
 @testset "Projected NS Operators                " begin
     # construct grid
-    Ny = 32; Nx = 15; Nz = 33; Nt = 51
-    g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
+    Ny = 32; Nx = 15; Nz = 15; Nt = 21
+    # g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
+    #                 2π, 5.8,
+    #                 chebdiff(Ny),
+    #                 chebddiff(Ny),
+    #                 chebws(Ny),
+    #                 adjoint_diff=false)
+    y = range(-1, 1, length=Ny)
+    g = ChannelGrid(y, Nx, Nz, Nt,
                     2π, 5.8,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny))
+                    DiffMatrix(y, 5, 1),
+                    DiffMatrix(y, 5, 2),
+                    quadweights(y, 1),
+                    adjoint_diff=true)
 
     # construct modes
     M = 3*Ny
@@ -52,8 +60,8 @@
     Re = rand()*50
     Ro = rand()
     op_nl = CartesianPrimitiveNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE)
-    op_ln = CartesianPrimitiveLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, adjoint=true)
-    op_pr = ProjectedNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE)
-    @test op_pr(similar(a), a)    ≈ project(op_nl(0, u, similar(u)), Ψ)
-    @test op_pr(similar(a), a, b) ≈ project(op_ln(0, u, v, similar(u)), Ψ)
+    op_ln = CartesianPrimitiveLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, mode=AdjointDiscrete())
+    op_pr = ProjectedNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, mode=AdjointDiscrete())
+    @test op_pr(similar(a), a)    == project(op_nl(0, u, similar(u)), Ψ)
+    @test op_pr(similar(a), a, b) == project(op_ln(0, u, v, similar(u)), Ψ)
 end

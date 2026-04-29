@@ -2,7 +2,7 @@ using Test
 
 using FFTW, Random, LinearAlgebra
 
-using ChebUtils
+using ChebUtils, FDGrids
 
 using ReSolverChannelFlow
 

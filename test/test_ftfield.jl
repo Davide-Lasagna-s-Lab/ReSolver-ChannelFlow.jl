@@ -8,7 +8,7 @@
                     chebdiff(Ny),
                     chebddiff(Ny),
                     chebws(Ny),
-                    T)
+                    T, adjoint_diff=false)
 
     # some random variables
     A = randn(ComplexF64, Ny, (Nx >> 1) + 1, Nz, Nt)

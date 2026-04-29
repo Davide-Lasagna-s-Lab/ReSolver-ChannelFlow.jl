@@ -16,7 +16,8 @@
                     2π, 5.8,
                     chebdiff(Ny),
                     chebddiff(Ny),
-                    chebws(Ny))
+                    chebws(Ny),
+                    adjoint_diff=false)
 
     # test values of derivatives
     u = FFT(Field(g, u_fun, 2π))

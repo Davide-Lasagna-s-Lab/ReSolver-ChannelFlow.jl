@@ -5,7 +5,8 @@
                     2π, 2π,
                     chebdiff(Ny),
                     chebddiff(Ny),
-                    chebws(Ny))
+                    chebws(Ny),
+                    adjoint_diff=false)
 
     for dealias in [false, true]
         # test constructors

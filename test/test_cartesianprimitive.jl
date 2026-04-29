@@ -25,7 +25,8 @@
                     2π, 5.8,
                     chebdiff(Ny),
                     chebddiff(Ny),
-                    chebws(Ny))
+                    chebws(Ny),
+                    adjoint_diff=false)
 
     # test nonlinear operator
     Re = rand()*50
@@ -38,6 +39,7 @@ end
 
 @testset "Cartesian primitive linearised NSE    " begin
     # define functions
+    # ! should add x-dependence
     ux_fun(y, x, z, t)       = y + (1 - y^2)*exp(cos(5.8*z))*atan(sin(t))
     uy_fun(y, x, z, t)       = cos(π*y/2)^4*sin(5.8*z)*cos(sin(t))
     uz_fun(y, x, z, t)       = (1 - y^2)*cos(5.8*z)*cos(cos(t))
@@ -54,12 +56,17 @@ end
     div_u_wz_fun(y, x, z, t) = (duydy_fun(y, x, z, t) + duzdz_fun(y, x, z, t))*wz_fun(y, x, z, t)
 
     # construct grid
-    Ny = 32; Nx = 15; Nz = 33; Nt = 51
-    g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
+    Ny = 16; Nx = 15; Nz = 15; Nt = 21
+    y = range(-1, 1, length=Ny)
+    Dy = DiffMatrix(y, 3, 1)
+    Dy2 = DiffMatrix(y, 3, 2)
+    ws = quadweights(y, 1)
+    g = ChannelGrid(y, Nx, Nz, Nt,
                     2π, 5.8,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny))
+                    Dy,
+                    Dy2,
+                    ws,
+                    adjoint_diff=true)
 
     # define fields
     u       = FFT(VectorField(g, (ux_fun, uy_fun, uz_fun), 2π))
@@ -71,13 +78,15 @@ end
     Re = rand()*50
     Ro = rand()
     op_nl = CartesianPrimitiveNSE(g,  Re, Ro=Ro, flags=FFTW.ESTIMATE)
-    op_ln = CartesianPrimitiveLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, adjoint=false)
-    op_ad = CartesianPrimitiveLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, adjoint=true)
+    op_ln = CartesianPrimitiveLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, mode=Forward())
+    op_ad = CartesianPrimitiveLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, mode=AdjointDiscrete())
     a = op_nl(0.0, u .+ 1e-6.*v, similar(u)) - op_nl(0.0, u, similar(u))
     b = op_ln(0.0, u, 1e-6.*v, similar(u))
     @test norm(a - b) < 1e-11
 
     # test adjoint identity
-    @test dot(op_ln(0.0, u, v, similar(u)), w) ≈ dot(v, op_ad(0.0, u, w, similar(u))) + dot(v, div_u_w)
-    # extra term in adjoint operator is required for field `u` that isn't divergence-free
+    # this test should be independent of grid size since it is discretely consistent
+    @test abs(dot(op_ln(0.0, u, v, similar(u)), w) - dot(v, op_ad(0.0, u, w, similar(u)))) < 1e-12
+    # ! use below test for continous adjoint
+    # @test abs(dot(op_ln(0.0, u, v, similar(u)), w) - dot(v, op_ad(0.0, u, w, similar(u))) - dot(v, div_u_w)) < 1e-12
 end

@@ -5,7 +5,8 @@
                     2π, 2π,
                     chebdiff(Ny),
                     chebddiff(Ny),
-                    chebws(Ny))
+                    chebws(Ny),
+                    adjoint_diff=false)
 
     # test scalar broadcasting
     u = FTField(g, ones(ComplexF64, Ny, (Nx >> 1) + 1, Nz, Nt))

@@ -5,7 +5,8 @@
                     1.0, 1.0,
                     chebdiff(Ny),
                     chebddiff(Ny),
-                    chebws(Ny))
+                    chebws(Ny),
+                    adjoint_diff=false)
 
     # create plans
     plans  = @test_nowarn ReSolverChannelFlow.FFTPlans((Ny, Nx, Nz, Nt), (2, 3, 4), dealias=false, flags=FFTW.ESTIMATE)

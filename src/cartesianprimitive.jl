@@ -11,13 +11,12 @@ mutable struct CartesianPrimitiveNSE{G, T, FFT, A, B} <: NSE{FTField} # TODO: ne
     const scache::Vector{VectorField{3, FTField{G, T, A}}}
     const pcache::Vector{VectorField{3,   Field{G, T, B}}}
 
-    function CartesianPrimitiveNSE(Re::T,
-                                   Ro::T,
-                                plans::FFT,
-                               scache::Vector{<:VectorField{3, <:FTField{G, T, A}}},
-                               pcache::Vector{<:VectorField{3,   <:Field{G, T, B}}}) where {T, FFT, G, A, B}
+    CartesianPrimitiveNSE(Re::T,
+                          Ro::T,
+                       plans::FFT,
+                      scache::Vector{<:VectorField{3, <:FTField{G, T, A}}},
+                      pcache::Vector{<:VectorField{3,   <:Field{G, T, B}}}) where {T, FFT, G, A, B} =
         new{G, T, FFT, A, B}(Re, Ro, plans, scache, pcache)
-    end
 end
 
 function CartesianPrimitiveNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE) where {S, T}
@@ -66,37 +65,40 @@ function (eq::CartesianPrimitiveNSE)(::Real,
 end
 
 
-# --------------------------------- #
-# linearised navier-stokes operator #
-# --------------------------------- #
-mutable struct CartesianPrimitiveLNSE{ADJ, G, T, FFT, A, B} <: LNSE{FTField}
+# ---------------------------------- #
+# linearised navier-stokes operators #
+# ---------------------------------- #
+abstract type               Mode end
+struct Forward           <: Mode end
+struct AdjointDiscrete   <: Mode end
+struct AdjointContinuous <: Mode end
+
+mutable struct CartesianPrimitiveLNSE{MODE, T, FFT, S, P} <: LNSE{FTField}
               Re::T
               Ro::T
      const plans::FFT
-    const scache::Vector{VectorField{3, FTField{G, T, A}}}
-    const pcache::Vector{VectorField{3,   Field{G, T, B}}}
+    const scache::Vector{VectorField{3, S}}
+    const pcache::Vector{VectorField{3, P}}
 
-    function CartesianPrimitiveLNSE(Re::T,
-                                    Ro::T,
-                                 plans::FFT,
-                                scache::Vector{<:VectorField{3, <:FTField{G, T, A}}},
-                                pcache::Vector{<:VectorField{3,   <:Field{G, T, B}}},
-                               adjoint::Bool) where {T, FFT, G, A, B}
-        new{adjoint, G, T, FFT, A, B}(Re, Ro, plans, scache, pcache)
-    end
+    CartesianPrimitiveLNSE{MODE}(Re::T,
+                                 Ro::T,
+                              plans::FFT,
+                             scache::Vector{<:VectorField{3, S}},
+                             pcache::Vector{<:VectorField{3, P}}) where {MODE, T, FFT, S, P} =
+        new{MODE, T, FFT, S, P}(Re, Ro, plans, scache, pcache)
 end
 
-function CartesianPrimitiveLNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE, adjoint=false) where {S, T}
+function CartesianPrimitiveLNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE, mode::M=Forward()) where {S, T, M<:Mode}
     plans = FFTPlans(S, (2, 3, 4), T, flags=flags)
-    scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:6]
+    scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:4]
     pcache = [VectorField([  Field(g, dealias=true) for _ in 1:3]...) for _ in 1:8]
-    CartesianPrimitiveLNSE(T(Re), T(Ro), plans, scache, pcache, adjoint)
+    return CartesianPrimitiveLNSE{M}(T(Re), T(Ro), plans, scache, pcache)
 end
 
-function (eq::CartesianPrimitiveLNSE{ADJ})(::Real,
-                                          u::VectorField{3, F},
-                                          v::VectorField{3, F},
-                                        out::VectorField{3, F}) where {ADJ, F<:FTField}
+function (eq::CartesianPrimitiveLNSE)(::Real,
+                                     u::VectorField{3, F},
+                                     v::VectorField{3, F},
+                                   out::VectorField{3, F}) where {F<:FTField}
     # aliases
     dudx = eq.scache[1]
     dudy = eq.scache[2]
@@ -121,14 +123,14 @@ function (eq::CartesianPrimitiveLNSE{ADJ})(::Real,
     return out
 end
 
-function (eq::CartesianPrimitiveLNSE{false})(::Real,
-                                            v::VectorField{3, F},
-                                          out::VectorField{3, F}) where {F<:FTField}
+function (eq::CartesianPrimitiveLNSE{Forward})(::Real,
+                                              v::VectorField{3, F},
+                                            out::VectorField{3, F}) where {F<:FTField}
     # aliases
     dudx = eq.scache[1]
-    dvdx = eq.scache[4]
-    dvdy = eq.scache[5]
-    dvdz = eq.scache[6]
+    dvdx = eq.scache[2]
+    dvdy = eq.scache[3]
+    dvdz = eq.scache[4]
     U    = eq.pcache[1]
     dUdx = eq.pcache[2]
     dUdy = eq.pcache[3]
@@ -166,14 +168,14 @@ function (eq::CartesianPrimitiveLNSE{false})(::Real,
     return out
 end
 
-function (eq::CartesianPrimitiveLNSE{true})(::Real,
-                                           v::VectorField{3, F},
-                                         out::VectorField{3, F}) where {F<:FTField}
+function (eq::CartesianPrimitiveLNSE{AdjointContinuous})(::Real,
+                                                        v::VectorField{3, F},
+                                                      out::VectorField{3, F}) where {F<:FTField}
     # aliases
     dudx = eq.scache[1]
-    dvdx = eq.scache[4]
-    dvdy = eq.scache[5]
-    dvdz = eq.scache[6]
+    dvdx = eq.scache[2]
+    dvdy = eq.scache[3]
+    dvdz = eq.scache[4]
     U    = eq.pcache[1]
     dUdx = eq.pcache[2]
     dUdy = eq.pcache[3]
@@ -201,7 +203,7 @@ function (eq::CartesianPrimitiveLNSE{true})(::Real,
     for n in 1:3
         @. dVdx[n] = U[1]*dVdx[n] + U[2]*dVdy[n] + U[3]*dVdz[n] # overwrite field to save memory
     end
-    dVdz .*= 0.0
+    dVdz .= 0.0
     for i in 1:3
         @. dVdz[1] -= V[i]*dUdx[i] # overwrite field to save memory
         @. dVdz[2] -= V[i]*dUdy[i] # overwrite field to save memory
@@ -217,4 +219,57 @@ function (eq::CartesianPrimitiveLNSE{true})(::Real,
     return out
 end
 
+function (eq::CartesianPrimitiveLNSE{AdjointDiscrete})(::Real,
+                                                      v::VectorField{3, F},
+                                                    out::VectorField{3, F}) where {F<:FTField}
+    # aliases
+    dudx = eq.scache[1]
+    u1v  = eq.scache[2]
+    u2v  = eq.scache[3]
+    u3v  = eq.scache[4]
+    U    = eq.pcache[1]
+    dUdx = eq.pcache[2]
+    dUdy = eq.pcache[3]
+    dUdz = eq.pcache[4]
+    V    = eq.pcache[5]
+    U1V  = eq.pcache[6]
+    U2V  = eq.pcache[7]
+    U3V  = eq.pcache[8]
+
+    # compute viscous term
+    laplacian!(out, v, adjoint=true)
+    out .*= 1/eq.Re
+
+    # compute products
+    eq.plans(V, v)
+    for n in 1:3
+        @. U1V[n] = U[1]*V[n]
+        @. U2V[n] = U[2]*V[n]
+        @. U3V[n] = U[3]*V[n]
+    end
+    eq.plans(u1v, U1V)
+    eq.plans(u2v, U2V)
+    eq.plans(u3v, U3V)
+
+    # advection term
+    eq.plans(dUdx, dudx) # has to be recomputed since nonlinear equation overwrites this field with other data
+    for n in 1:3
+        out[n] .+= ddx1!(dudx[1], u1v[n]) .- ddx2!(dudx[2], u2v[n], adjoint=true) .+ ddx3!(dudx[3], u3v[n])
+    end
+    U1V .= 0.0
+    for n in 1:3
+        @. U1V[1] -= V[n]*dUdx[n] # overwrite field to save memory
+        @. U1V[2] -= V[n]*dUdy[n] # overwrite field to save memory
+        @. U1V[3] -= V[n]*dUdz[n] # overwrite field to save memory
+    end
+    eq.plans(out, U1V, true) # add the result to the output
+
+    # coriolis term
+    @. out[1] -= eq.Ro*v[2]
+    @. out[2] += eq.Ro*v[1]
+
+    return out
+end
+
+# ! remove if I can
 NSEBase.ndim(::Union{CartesianPrimitiveNSE, CartesianPrimitiveLNSE}) = 3

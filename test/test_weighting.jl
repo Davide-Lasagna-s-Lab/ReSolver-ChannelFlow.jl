@@ -9,7 +9,8 @@
                     1.0, 1.0,
                     chebdiff(Ny),
                     chebddiff(Ny),
-                    chebws(Ny))
+                    chebws(Ny),
+                    adjoint_diff=false)
 
     # generate modes
     M = Ny

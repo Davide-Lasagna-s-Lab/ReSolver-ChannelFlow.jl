@@ -15,7 +15,7 @@ export dds!, ddx1!, ddx2!, ddx3!, laplacian!
 export shift!
 export dot, norm, normdiff, minnormdiff
 export FarazmandWeight
-export CartesianPrimitiveNSE, CartesianPrimitiveLNSE
+export CartesianPrimitiveNSE, CartesianPrimitiveLNSE, CartesianPrimitiveALNSE, Forward, AdjointDiscrete, AdjointContinuous
 export ProjectedNSE
 
 include("grid.jl")

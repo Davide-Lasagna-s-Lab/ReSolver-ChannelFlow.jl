@@ -93,11 +93,18 @@ function _project!(a, u, S, N, T)
     return a
 end
 
-function NSEBase.expand!(u::VectorField{N, <:FTField{G}},
-                         a::ProjectedField{<:FTField{G}}) where {N, S, G<:Abstract1DChannelGrid{S}}
-    u .*= 0
-    @loop_modes S[4] S[3] S[2] for n in 1:N, m in axes(a, 1)
-        @views @inbounds u[n][:, _nx, _nz, _nt] .+= a[m, _nx, _nz, _nt].*_get_mode(modes(a), S[1], n, m, _nx, _nz, _nt)
+# ! splitting the modes into three seperate objects for each velocity component is faster
+# ! allocations are somehow related to FDGrids.jl, the broadcasting is kind of broken???
+function NSEBase.expand!(u::VectorField{N, <:FTField{G, T}},
+                         a::ProjectedField{<:FTField{G, T}}) where {N, S, T, G<:Abstract1DChannelGrid{S}}
+    u .= zero(T)
+    @inbounds begin
+        for n in 1:N
+            @loop_modes S[4] S[3] S[2] for m in axes(a, 1)
+                @view(u[n][:, _nx, _nz, _nt]) .+= a[m, _nx, _nz, _nt].*_get_mode(modes(a), S[1], n, m, _nx, _nz, _nt)
+                # @views u[n][:, _nx, _nz, _nt] .+= a[m, _nx, _nz, _nt].*mds[n][:, m, _nx, _nz, _nt]
+            end
+        end
     end
     return u
 end
@@ -109,14 +116,13 @@ function dds!(out::ProjectedField{F}, a::ProjectedField{F}) where {S, F<:FTField
     return out
 end
 
-function NSEBase.ProjectedNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, base::Vector=g.y, flags=FFTW.EXHAUSTIVE, adjoint=true) where {S, T}
+function NSEBase.ProjectedNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, base::Vector=g.y, flags=FFTW.EXHAUSTIVE, mode::M=AdjointDiscrete()) where {S, T, M}
     # construct operators
     plans = FFTPlans(S, (2, 3, 4), T, flags=flags)
-    scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:6]
+    scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:4]
     pcache = [VectorField([  Field(g, dealias=true) for _ in 1:3]...) for _ in 1:8]
     nl = CartesianPrimitiveNSE(T(Re), T(Ro), plans, scache, pcache)
-    ln = CartesianPrimitiveLNSE(T(Re), T(Ro), plans, scache, pcache, adjoint)
-
+    ln = CartesianPrimitiveLNSE{M}(T(Re), T(Ro), plans, scache, pcache)
     return ProjectedNSE(scache[1][1], nl, ln, T.(base))
 end
 

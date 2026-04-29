@@ -10,7 +10,7 @@ function ddx1!(out::FTField{G}, u::FTField{G}) where {S, G<:Abstract1DChannelGri
     return out
 end
 
-ddx2!(out::F, u::F) where {F<:Union{Field, FTField}} = mul!(out, grid(u).Dy,  u)
+ddx2!(out::F, u::F; adjoint=false) where {F<:Union{Field, FTField}} = adjoint ? mul!(out, grid(u).Dya, u) : mul!(out, grid(u).Dy,  u)
 
 function ddx3!(out::FTField{G}, u::FTField{G}) where {S, G<:Abstract1DChannelGrid{S}}
     @loop_modes S[4] S[3] S[2] for ny in 1:S[1]
@@ -19,9 +19,9 @@ function ddx3!(out::FTField{G}, u::FTField{G}) where {S, G<:Abstract1DChannelGri
     return out
 end
 
-function laplacian!(out::FTField{G}, u::FTField{G}) where {S, G<:ChannelGrid{S}}
+function laplacian!(out::FTField{G}, u::FTField{G}; adjoint::Bool=false) where {S, G<:ChannelGrid{S}}
     # take second y-derivative
-    mul!(out, grid(u).Dy2, u)
+    adjoint ? mul!(out, grid(u).Dy2a, u) : mul!(out, grid(u).Dy2,  u)
 
     # take second x- and z-derivatives
     @loop_modes S[4] S[3] S[2] for ny in 1:S[1]
@@ -37,9 +37,9 @@ end
 # ------------------------ #
 for name in [:ddx1!, :ddx2!, :ddx3!, :laplacian!]
     @eval begin
-        function $name(out::VectorField{N}, u::VectorField{N}) where {N}
+        function $name(out::VectorField{N}, u::VectorField{N}; kwargs...) where {N}
             for n in 1:N
-                $name(out[n], u[n])
+                $name(out[n], u[n]; kwargs...)
             end
             return out
         end
