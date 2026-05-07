@@ -48,7 +48,8 @@ end
 # ------------------------------ #
 # vector field grid constructors #
 # ------------------------------ #
-NSEBase.VectorField(g::Abstract1DChannelGrid, ::Type{T}=FTField; N::Int=3, kwargs...) where {T} = VectorField([T(g; kwargs...) for _ in 1:N]...)
+# VectorField(g, FTField; N) is handled generically by NSEBase.
+# This variant passes a temporal period to Field's function constructor.
 NSEBase.VectorField(g::Abstract1DChannelGrid, funcs, period; dealias::Bool=false) = VectorField([Field(g, f, period, dealias=dealias) for f in funcs]...)
 NSEBase.add_base!(u::VectorField{N, <:FTField}, base) where {N} = (u[1][:, 1, 1, 1] .+= base; return u)
 

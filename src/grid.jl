@@ -41,7 +41,7 @@ end
 Base.similar(g::ChannelGrid{S, T}, ::Type{U}=T) where {S, T, U} =
     U == T ? g : ChannelGrid{S, U}(U.(g.y), U.(g.Dy), U.(g.Dy2), U.(g.Dya), U.(g.Dy2a), U.(g.ws), U(g.α), U(g.β))
 
-# get points from grid
+# get points from grid — period-based form for constructing physical fields
 points(g::ChannelGrid{S}, T) where {S}       = (                           g.y,
                                                 (0:(S[2] - 1))/(S[2])*(2π/g.α),
                                                 (0:(S[3] - 1))/(S[3])*(2π/g.β),
@@ -50,6 +50,21 @@ points(g::ChannelGrid, T, S::NTuple{3, Int}) = (                           g.y,
                                                 (0:(S[1] - 1))/(S[1])*(2π/g.α),
                                                 (0:(S[2] - 1))/(S[2])*(2π/g.β),
                                                 (0:(S[3] - 1))/(S[3])*T)
+
+# NSEBase interface: keyword-based points for zero-field construction
+function NSEBase.points(g::Abstract1DChannelGrid{S}; dealias::Bool=false) where {S}
+    _pad(n) = (3n) >> 1 + 1 - ((3n) >> 1) & 1
+    Nx = dealias ? _pad(S[2]) : S[2]
+    Nz = dealias ? _pad(S[3]) : S[3]
+    Nt = dealias ? _pad(S[4]) : S[4]
+    return (g.y,
+            (0:(Nx - 1))/Nx*(2π/g.α),
+            (0:(Nz - 1))/Nz*(2π/g.β),
+            (0:(Nt - 1))/Nt)
+end
+
+# FFT normalisation: product of mode counts in the homogeneous directions
+NSEBase.fft_norm(g::Abstract1DChannelGrid{S}) where {S} = (S[2], S[3], S[4])
 
 # grow grid size
 growto(g::ChannelGrid{S, T}, N::NTuple{3, Int}) where {S, T} = ChannelGrid{(S[1], N...), T}(g.y, get_fields(g)...)
