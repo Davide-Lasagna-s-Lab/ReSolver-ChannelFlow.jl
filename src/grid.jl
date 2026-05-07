@@ -1,6 +1,10 @@
 # Implementation of the RPCF grid
 
-abstract type Abstract1DChannelGrid{S, T} end
+# H = (2, 3, 4): streamwise (rfft), spanwise, time are the homogeneous directions.
+# Dimension 1 (wall-normal y) is the only non-homogeneous direction.
+abstract type Abstract1DChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, (2, 3, 4)} end
+
+Base.size(::Abstract1DChannelGrid{S}) where {S} = S
 
 struct ChannelGrid{S, T, D1, D2, D3, D4} <: Abstract1DChannelGrid{S, T}
     y::Vector{T}

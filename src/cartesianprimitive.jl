@@ -4,19 +4,19 @@
 # ---------------------- #
 # navier-stokes operator #
 # ---------------------- #
-mutable struct CartesianPrimitiveNSE{G, T, FFT, A, B} <: NSE{FTField} # TODO: need to check performance when not fully typing FTField!
+mutable struct CartesianPrimitiveNSE{T, FFT, S, P}
               Re::T
               Ro::T
      const plans::FFT
-    const scache::Vector{VectorField{3, FTField{G, T, A}}}
-    const pcache::Vector{VectorField{3,   Field{G, T, B}}}
+    const scache::Vector{VectorField{3, S}}
+    const pcache::Vector{VectorField{3, P}}
 
     CartesianPrimitiveNSE(Re::T,
                           Ro::T,
                        plans::FFT,
-                      scache::Vector{<:VectorField{3, <:FTField{G, T, A}}},
-                      pcache::Vector{<:VectorField{3,   <:Field{G, T, B}}}) where {T, FFT, G, A, B} =
-        new{G, T, FFT, A, B}(Re, Ro, plans, scache, pcache)
+                      scache::Vector{<:VectorField{3, S}},
+                      pcache::Vector{<:VectorField{3, P}}) where {T, FFT, S, P} =
+        new{T, FFT, S, P}(Re, Ro, plans, scache, pcache)
 end
 
 function CartesianPrimitiveNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE) where {S, T}
@@ -73,7 +73,7 @@ struct Forward           <: Mode end
 struct AdjointDiscrete   <: Mode end
 struct AdjointContinuous <: Mode end
 
-mutable struct CartesianPrimitiveLNSE{MODE, T, FFT, S, P} <: LNSE{FTField}
+mutable struct CartesianPrimitiveLNSE{MODE, T, FFT, S, P}
               Re::T
               Ro::T
      const plans::FFT
@@ -271,5 +271,3 @@ function (eq::CartesianPrimitiveLNSE{AdjointDiscrete})(::Real,
     return out
 end
 
-# ! remove if I can
-NSEBase.ndim(::Union{CartesianPrimitiveNSE, CartesianPrimitiveLNSE}) = 3

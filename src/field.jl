@@ -1,6 +1,6 @@
 # Implementation of physical representation of scalar channel fields
 
-struct Field{G, T, A<:AbstractArray{T, 4}} <: AbstractScalarField{4, T}
+struct Field{G, T, A<:AbstractArray{T, 4}} <: AbstractArray{T, 4}
     grid::G
     data::A
 
@@ -30,9 +30,21 @@ end
 # ------------- #
 # array methods #
 # ------------- #
+Base.IndexStyle(::Type{<:Field})                      = Base.IndexLinear()
 Base.parent(u::Field)                                 = u.data
+Base.size(u::Field)                                   = size(parent(u))
 Base.eltype(::Field{G, T}) where {G, T}               = T
 Base.similar(u::Field, ::Type{T}=eltype(u)) where {T} = Field(similar(grid(u), T), zero(parent(u)))
+
+Base.@propagate_inbounds function Base.getindex(u::Field, i::Int)
+    @boundscheck checkbounds(parent(u), i)
+    @inbounds return parent(u)[i]
+end
+Base.@propagate_inbounds function Base.setindex!(u::Field, v, i::Int)
+    @boundscheck checkbounds(parent(u), i)
+    @inbounds parent(u)[i] = v
+    return v
+end
 
 
 # --------------- #
@@ -68,13 +80,13 @@ end
 FFT(u::VectorField{L, P})    where {L, P<:Field} = VectorField([FFT(u[n])    for n in 1:L]...)
 FFT(u::VectorField{L, P}, N) where {L, P<:Field} = VectorField([FFT(u[n], N) for n in 1:L]...)
 
-function IFFT(û::FTField{G, T}) where {S, G<:Abstract1DChannelGrid{S}, T}
+function IFFT(û::FTField{G}) where {S, G<:Abstract1DChannelGrid{S}}
     u = Field(grid(û))
     parent(u) .= brfft(parent(û), S[2], [2, 3, 4])
     return u
 end
 
-function IFFT(û::FTField{G, T}, N) where {G, T}
+function IFFT(û::FTField{G}, N) where {G<:Abstract1DChannelGrid}
     u = Field(growto(grid(û), N))
     parent(u) .= brfft(parent(growto(û, N)), N[1], [2, 3, 4])
     return u

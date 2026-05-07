@@ -7,15 +7,15 @@ struct FarazmandWeight{T<:Real}
 end
 Base.getindex(A::FarazmandWeight, nx::Int, nz::Int, nt::Int) = 1/(1 + (A.α*nx)^2 + (A.β*nz)^2 + (A.ω*nt)^2)
 
-function LinearAlgebra.mul!(a::ProjectedField{F, Complex{T}}, A::FarazmandWeight{T}) where {S, F<:FTField{<:Abstract1DChannelGrid{S}}, T}
+function LinearAlgebra.mul!(a::ProjectedField{G}, A::FarazmandWeight) where {S, G<:Abstract1DChannelGrid{S}}
     @loop_modes S[4] S[3] S[2] for m in axes(a, 1)
         @inbounds a[m, _nx, _nz, _nt] *= A[nx, nz, nt]
     end
     return a
 end
 
-function LinearAlgebra.dot(a::ProjectedField{F, Complex{T}}, A::FarazmandWeight{T}, b::ProjectedField{F, Complex{T}}) where {S, F<:FTField{<:Abstract1DChannelGrid{S}}, T}
-    sum = zero(T)
+function LinearAlgebra.dot(a::ProjectedField{G}, A::FarazmandWeight, b::ProjectedField{G}) where {S, G<:Abstract1DChannelGrid{S}}
+    sum = zero(real(eltype(a)))
     @loop_nznt S[4] S[3] for m in axes(a, 1)
         @inbounds sum += A[0, nz, nt]*real(dot(a[m, 1, _nz, _nt], b[m, 1, _nz, _nt]))
     end
