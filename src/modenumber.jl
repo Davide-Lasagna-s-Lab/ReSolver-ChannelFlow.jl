@@ -56,4 +56,31 @@ macro loop_modes(Nt, Nz, Nx, expr)
     end
 end
 
-# @loop_nznt is now provided by NSEBase.
+macro loop_nznt(Nt, Nz, expr)
+    quote
+        for $(esc(:_nt)) in 1:($(esc(Nt)) >> 1) + 1
+            for $(esc(:_nz)) in 1:($(esc(Nz)) >> 1) + 1
+                $(esc(:nz)) = $(esc(:_nz)) - 1
+                $(esc(:nt)) = $(esc(:_nt)) - 1
+                $(esc(expr))
+            end
+            for $(esc(:_nz)) in ($(esc(Nz)) >> 1) + 2:$(esc(Nz))
+                $(esc(:nz)) = $(esc(:_nz)) - $(esc(Nz)) - 1
+                $(esc(:nt)) = $(esc(:_nt)) - 1
+                $(esc(expr))
+            end
+        end
+        for $(esc(:_nt)) in ($(esc(Nt)) >> 1) + 2:$(esc(Nt))
+            for $(esc(:_nz)) in 1:($(esc(Nz)) >> 1) + 1
+                $(esc(:nz)) = $(esc(:_nz)) - 1
+                $(esc(:nt)) = $(esc(:_nt)) - $(esc(Nt)) - 1
+                $(esc(expr))
+            end
+            for $(esc(:_nz)) in ($(esc(Nz)) >> 1) + 2:$(esc(Nz))
+                $(esc(:nz)) = $(esc(:_nz)) - $(esc(Nz)) - 1
+                $(esc(:nt)) = $(esc(:_nt)) - $(esc(Nt)) - 1
+                $(esc(expr))
+            end
+        end
+    end
+end

@@ -6,21 +6,22 @@
 
 # Quadrature weights for the wall-normal (non-homogeneous) direction.
 # dim is ignored here since channel flow has exactly one non-homogeneous dim.
-NSEBase._quadrature_weight(g::Abstract1DChannelGrid, ::Int, ny::Int) = g.ws[ny]
+NSEBase._quadrature_weight(g::AbstractChannelGrid, ::Int, ny::Int) = g.ws[ny]
 
 # dot(FTField, FTField) is provided by NSEBase's @generated implementation,
-# which dispatches on AbstractGrid{T, D, H} and calls _quadrature_weight above.
+# which dispatches on AbstractGrid{T, D, Axes, Hs, Ht} and calls
+# _quadrature_weight above.
 
 # ----------------------- #
 # standard inner products #
 # ----------------------- #
 
-function LinearAlgebra.dot(a::ProjectedField{G}, b::ProjectedField{G}) where {S, G<:Abstract1DChannelGrid{S}}
+function LinearAlgebra.dot(a::ProjectedField{G}, b::ProjectedField{G}) where {S, G<:AbstractChannelGrid{S}}
     sum = zero(real(eltype(a)))
-    @loop_nznt S[4] S[3] for m in axes(a, 1)
+    @loop_nznt S[1] S[3] for m in axes(a, 1)
         @inbounds sum += real(dot(a[m, 1, _nz, _nt], b[m, 1, _nz, _nt]))
     end
-    @loop_nznt S[4] S[3] for _nx in 2:(S[2] >> 1) + 1, m in axes(a, 1)
+    @loop_nznt S[1] S[3] for _nx in 2:(S[2] >> 1) + 1, m in axes(a, 1)
         @inbounds sum += 2*real(dot(a[m, _nx, _nz, _nt], b[m, _nx, _nz, _nt]))
     end
     return sum/2
@@ -30,20 +31,20 @@ end
 # ----------- #
 # other norms #
 # ----------- #
-function normdiff(u::FTField{G}, v::FTField{G}, shifts=(0, 0, 0), tmp::FTField{G}=zero(v)) where {S, G<:Abstract1DChannelGrid{S}}
+function normdiff(u::FTField{G}, v::FTField{G}, shifts=(0, 0, 0), tmp::FTField{G}=zero(v)) where {S, G<:AbstractChannelGrid{S}}
     sum = zero(real(eltype(u)))
     tmp .= v
     shift!(tmp, shifts)
-    @loop_nznt S[4] S[3] for ny in 1:S[1]
-        @inbounds sum += grid(u).ws[ny]*abs2(u[ny, 1, _nz, _nt] - tmp[ny, 1, _nz, _nt])
+    @loop_nznt S[1] S[3] for ny in 1:S[4]
+        @inbounds sum += grid(u).ws[ny]*abs2(u[_nt, 1, _nz, ny] - tmp[_nt, 1, _nz, ny])
     end
-    @loop_nznt S[4] S[3] for _nx in 2:(S[2] >> 1) + 1, ny in 1:S[1]
-        @inbounds sum += 2*grid(u).ws[ny]*abs2(u[ny, _nx, _nz, _nt] - tmp[ny, _nx, _nz, _nt])
+    @loop_nznt S[1] S[3] for _nx in 2:(S[2] >> 1) + 1, ny in 1:S[4]
+        @inbounds sum += 2*grid(u).ws[ny]*abs2(u[_nt, _nx, _nz, ny] - tmp[_nt, _nx, _nz, ny])
     end
     return sqrt(sum/2)
 end
 
-function normdiff(u::VectorField{N, <:FTField{G}}, v::VectorField{N, <:FTField{G}}, shifts=(0, 0, 0), tmp::FTField{G}=zero(u[1])) where {N, G<:Abstract1DChannelGrid}
+function normdiff(u::VectorField{N, <:FTField{G}}, v::VectorField{N, <:FTField{G}}, shifts=(0, 0, 0), tmp::FTField{G}=zero(u[1])) where {N, G<:AbstractChannelGrid}
     sum = zero(real(eltype(u[1])))
     for n in 1:N
         sum += normdiff(u[n], v[n], shifts, tmp)^2
@@ -51,15 +52,15 @@ function normdiff(u::VectorField{N, <:FTField{G}}, v::VectorField{N, <:FTField{G
     return sqrt(sum)
 end
 
-function normdiff(a::ProjectedField{G}, b::ProjectedField{G}, shifts=(0, 0, 0), tmp::ProjectedField{G}=zero(b)) where {S, G<:Abstract1DChannelGrid{S}}
+function normdiff(a::ProjectedField{G}, b::ProjectedField{G}, shifts=(0, 0, 0), tmp::ProjectedField{G}=zero(b)) where {S, G<:AbstractChannelGrid{S}}
     throw(error("Method does not working for projected fields"))
     sum = zero(real(eltype(a)))
     tmp .= b
     shift!(tmp, shifts)
-    @loop_nznt S[4] S[3] for m in axes(a, 1)
+    @loop_nznt S[1] S[3] for m in axes(a, 1)
         @inbounds sum += abs2(a[m, 1, _nz, _nt] - tmp[m, 1, _nz, _nt])
     end
-    @loop_nznt S[4] S[3] for _nx in 2:(S[2] >> 1) + 1, m in axes(a, 1)
+    @loop_nznt S[1] S[3] for _nx in 2:(S[2] >> 1) + 1, m in axes(a, 1)
         @inbounds sum += 2*abs2(a[m, _nx, _nz, _nt] - tmp[m, _nx, _nz, _nt])
     end
     return sqrt(sum/2)
@@ -69,7 +70,7 @@ function minnormdiff(u::Union{FTField{G}, VectorField{D, <:FTField{G}}, Projecte
                      v::Union{FTField{G}, VectorField{D, <:FTField{G}}, ProjectedField{G}},
                      N::NTuple{3, Int}=(32, 32, 32),
                   tmp1::FTField{G}=zero(v),
-                  tmp2::FTField{G}=zero(v)) where {D, G<:Abstract1DChannelGrid}
+                  tmp2::FTField{G}=zero(v)) where {D, G<:AbstractChannelGrid}
     min_diff = Inf
     sx_min   = Inf
     sz_min   = Inf

@@ -28,7 +28,7 @@ function xshift!(u::VectorField{N, <:FTField}, sx) where {N}
     end
     return u
 end
-xshift!(u::FTField{<:Abstract1DChannelGrid{S}}, sx) where {S} = _perform_xshift!(u, sx, S[1], S[2], S[3], S[4])
+xshift!(u::FTField{<:AbstractChannelGrid{S}}, sx) where {S} = _perform_xshift!(u, sx, S[4], S[2], S[3], S[1])
 # TODO: needs to be added back once extra grid structure has been added back to NSEBase.jl
 # xshift!(a::ProjectedField{F}, sx) where {S, F<:FTField{<:ChannelGrid{S}}} = _perform_xshift!(a, sx, size(a, 1), S[2], S[3], S[4])
 
@@ -52,7 +52,7 @@ function zshift!(u::VectorField{N, <:FTField}, sz) where {N}
     end
     return u
 end
-zshift!(u::FTField{<:Abstract1DChannelGrid{S}}, sz) where {S} = _perform_zshift!(u, sz, S[1], S[2], S[3], S[4])
+zshift!(u::FTField{<:AbstractChannelGrid{S}}, sz) where {S} = _perform_zshift!(u, sz, S[4], S[2], S[3], S[1])
 # zshift!(a::ProjectedField{F}, sz) where {S, F<:FTField{<:ChannelGrid{S}}} = _perform_zshift!(a, sz, size(a, 1), S[2], S[3], S[4])
 
 function _perform_zshift!(field, sz, S1, S2, S3, S4)
@@ -76,7 +76,7 @@ function tshift!(u::VectorField{N, <:FTField}, st) where {N}
     end
     return u
 end
-tshift!(u::FTField{<:Abstract1DChannelGrid{S}}, st) where {S} = _perform_tshift!(u, st, S[1], S[2], S[3], S[4])
+tshift!(u::FTField{<:AbstractChannelGrid{S}}, st) where {S} = _perform_tshift!(u, st, S[4], S[2], S[3], S[1])
 # tshift!(a::ProjectedField{F}, st) where {S, F<:FTField{<:ChannelGrid{S}}} = _perform_tshift!(a, st, size(a, 1), S[2], S[3], S[4])
 
 function _perform_tshift!(field, st, S1, S2, S3, S4)

@@ -1,12 +1,17 @@
 # Implementation of the RPCF grid
 
-# H = (2, 3, 4): streamwise (rfft), spanwise, time are the homogeneous directions.
-# Dimension 1 (wall-normal y) is the only non-homogeneous direction.
-abstract type Abstract1DChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, (2, 3, 4)} end
+#TODO: pass a tuple to FFTPlans to allow the user select the best first transformed dimension 
+# this however may require additional code to understand which is the first transformed dimesion in other code
 
-Base.size(::Abstract1DChannelGrid{S}) where {S} = S
+# S    = (Nt, Nx, Nz, Ny): data is stored as (t, x, z, y)
+# Axes = (2, 4, 3, 1): x→dim2, y→dim4, z→dim3, t→dim1
+# Hs   = (2, 3): streamwise (rfft) and spanwise (fft) spatial homogeneous dims
+# Ht   = 1:      temporal (fft) homogeneous dim
+abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, (2, 4, 3, 1), (2, 3), 1} end
 
-struct ChannelGrid{S, T, D1, D2, D3, D4} <: Abstract1DChannelGrid{S, T}
+Base.size(::AbstractChannelGrid{S}) where {S} = S
+
+struct ChannelGrid{S, T, D1, D2, D3, D4} <: AbstractChannelGrid{S, T}
     y::Vector{T}
     Dy::D1
     Dy2::D2
@@ -34,7 +39,7 @@ function ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, ::Type{T}=Float64; adjo
     Dy2 = T.(Dy2)
     Dya  = adjoint_diff ? adjoint(Dy,  ws) : Dy
     Dy2a = adjoint_diff ? adjoint(Dy2, ws) : Dy2
-    return ChannelGrid{(length(y), Nx, Nz, Nt), T}(T.(y), Dy, Dy2, Dya, Dy2a, ws, T(α), T(β))
+    return ChannelGrid{(Nt, Nx, Nz, length(y)), T}(T.(y), Dy, Dy2, Dya, Dy2a, ws, T(α), T(β))
 end
 
 # ! change to convert
@@ -42,32 +47,31 @@ Base.similar(g::ChannelGrid{S, T}, ::Type{U}=T) where {S, T, U} =
     U == T ? g : ChannelGrid{S, U}(U.(g.y), U.(g.Dy), U.(g.Dy2), U.(g.Dya), U.(g.Dy2a), U.(g.ws), U(g.α), U(g.β))
 
 # get points from grid — period-based form for constructing physical fields
-points(g::ChannelGrid{S}, T) where {S}       = (                           g.y,
+points(g::ChannelGrid{S}, T) where {S}       = ((0:(S[1] - 1))/(S[1])*T,
                                                 (0:(S[2] - 1))/(S[2])*(2π/g.α),
                                                 (0:(S[3] - 1))/(S[3])*(2π/g.β),
-                                                (0:(S[4] - 1))/(S[4])*T)
-points(g::ChannelGrid, T, S::NTuple{3, Int}) = (                           g.y,
+                                                                        g.y)
+points(g::ChannelGrid, T, S::NTuple{3, Int}) = ((0:(S[3] - 1))/(S[3])*T,
                                                 (0:(S[1] - 1))/(S[1])*(2π/g.α),
                                                 (0:(S[2] - 1))/(S[2])*(2π/g.β),
-                                                (0:(S[3] - 1))/(S[3])*T)
+                                                                        g.y)
 
 # NSEBase interface: keyword-based points for zero-field construction
-function NSEBase.points(g::Abstract1DChannelGrid{S}; dealias::Bool=false) where {S}
-    _pad(n) = (3n) >> 1 + 1 - ((3n) >> 1) & 1
-    Nx = dealias ? _pad(S[2]) : S[2]
-    Nz = dealias ? _pad(S[3]) : S[3]
-    Nt = dealias ? _pad(S[4]) : S[4]
-    return (g.y,
+function NSEBase.points(g::AbstractChannelGrid{S}; dealias::Bool=false) where {S}
+    Nt, Nx, Nz = padded_size((S[1], S[2], S[3]), Val(dealias))
+    return ((0:(Nt - 1))/Nt,
             (0:(Nx - 1))/Nx*(2π/g.α),
             (0:(Nz - 1))/Nz*(2π/g.β),
-            (0:(Nt - 1))/Nt)
+            g.y)
 end
 
-# FFT normalisation: product of mode counts in the homogeneous directions
-NSEBase.fft_norm(g::Abstract1DChannelGrid{S}) where {S} = (S[2], S[3], S[4])
+# dim 2 = streamwise (x), dim 3 = spanwise (z), dim 1 = time; α = 2π/Lx, β = 2π/Lz
+NSEBase.wavenumber_scale(g::AbstractChannelGrid{S, T}, dim::Int) where {S, T} =
+    dim == 2 ? g.α : dim == 3 ? g.β : one(T)
 
 # grow grid size
-growto(g::ChannelGrid{S, T}, N::NTuple{3, Int}) where {S, T} = ChannelGrid{(S[1], N...), T}(g.y, get_fields(g)...)
+NSEBase.growto(g::ChannelGrid{S, T}, N::NTuple{3, Int}) where {S, T} =
+    ChannelGrid{(N[3], N[1], N[2], S[4]), T}(g.y, get_fields(g)...)
 
 # utility method to make mode generation easier with Resolvent.jl
 get_fields(g::ChannelGrid) = (g.Dy, g.Dy2, g.Dya, g.Dy2a, g.ws, g.α, g.β)
