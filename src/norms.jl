@@ -12,22 +12,6 @@ NSEBase._quadrature_weight(g::AbstractChannelGrid, ::Int, ny::Int) = g.ws[ny]
 # which dispatches on AbstractGrid{T, D, Axes, Hs, Ht} and calls
 # _quadrature_weight above.
 
-# ----------------------- #
-# standard inner products #
-# ----------------------- #
-
-function LinearAlgebra.dot(a::ProjectedField{G}, b::ProjectedField{G}) where {S, G<:AbstractChannelGrid{S}}
-    sum = zero(real(eltype(a)))
-    @loop_nznt S[1] S[3] for m in axes(a, 1)
-        @inbounds sum += real(dot(a[m, 1, _nz, _nt], b[m, 1, _nz, _nt]))
-    end
-    @loop_nznt S[1] S[3] for _nx in 2:(S[2] >> 1) + 1, m in axes(a, 1)
-        @inbounds sum += 2*real(dot(a[m, _nx, _nz, _nt], b[m, _nx, _nz, _nt]))
-    end
-    return sum/2
-end
-
-
 # ----------- #
 # other norms #
 # ----------- #

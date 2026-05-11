@@ -8,10 +8,10 @@
 
 # wall-normal (y) derivative — non-homogeneous, uses differentiation matrix
 NSEBase.ddx!(out::F, u::F, ::Val{4}; adjoint::Bool=false) where {F<:Union{Field, FTField}} =
-    mul!(out, adjoint ? grid(u).Dya : grid(u).Dy, u, Val(4))
+    LinearAlgebra.mul!(out, adjoint ? NSEBase.grid(u).Dya : NSEBase.grid(u).Dy, u, Val(4))
 
 function laplacian!(out::FTField{G}, u::FTField{G}; adjoint::Bool=false) where {S, G<:ChannelGrid{S}}
-    mul!(out, adjoint ? grid(u).Dy2a : grid(u).Dy2, u, Val(4))
-    add_homogeneous_laplacian!(out, u)
+    LinearAlgebra.mul!(out, adjoint ? NSEBase.grid(u).Dy2a : NSEBase.grid(u).Dy2, u, Val(4))
+    NSEBase.add_homogeneous_laplacian!(out, u)
     return out
 end

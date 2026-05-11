@@ -1,27 +1,5 @@
-# Utility object to allow dispatch for different indexing methods on FTField
-
-# ?: I wonder if I could define a @modenumber macro that converts the indexes at parse time and keeps the nice loops?
-
-struct ModeNumber
-    nx::Int
-    nz::Int
-    nt::Int
-end
-
-function _convert_modenumber(n::ModeNumber, Nz, Nt)
-    if n.nx >= 0
-        _nx = n.nx + 1
-        _nz = n.nz >= 0 ? n.nz + 1 : Nz + n.nz + 1
-        _nt = n.nt >= 0 ? n.nt + 1 : Nt + n.nt + 1
-        do_conj = false
-    else
-        _nx = -n.nx + 1
-        _nz = n.nz > 0 ? Nz - n.nz + 1 : -n.nz + 1
-        _nt = n.nt > 0 ? Nt - n.nt + 1 : -n.nt + 1
-        do_conj = true
-    end
-    return _nx, _nz, _nt, do_conj
-end
+# Spectral loop macros for the channel flow array layout (Nt, Nx, Nz, Ny).
+# ModeNumber and the core index conversion live in NSEBase.
 
 macro loop_modes(Nt, Nz, Nx, expr)
     quote

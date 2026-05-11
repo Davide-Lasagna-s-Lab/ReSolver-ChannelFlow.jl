@@ -3,6 +3,10 @@
 #TODO: pass a tuple to FFTPlans to allow the user select the best first transformed dimension 
 # this however may require additional code to understand which is the first transformed dimesion in other code
 
+#TODO: why is T a type parameter for the grid?
+
+#TODO: document the fact that S is the grid size and we store it explicitly for performance reasons
+
 # S    = (Nt, Nx, Nz, Ny): data is stored as (t, x, z, y)
 # Axes = (2, 4, 3, 1): x→dim2, y→dim4, z→dim3, t→dim1
 # Hs   = (2, 3): streamwise (rfft) and spanwise (fft) spatial homogeneous dims
