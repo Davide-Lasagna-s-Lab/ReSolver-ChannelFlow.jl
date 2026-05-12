@@ -10,27 +10,27 @@
     ws  = rand(Float64, Ny)
     α   = 2
     β   = π
-    T   = 10*rand()
 
     # test similar
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
     @test         g           isa ChannelGrid{(Ny, Nx, Nz, Nt), Float64}
-    @test similar(g, Float32) isa ChannelGrid{(Ny, Nx, Nz, Nt), Float32}
+    @test convert(Float32, g) isa ChannelGrid{(Ny, Nx, Nz, Nt), Float32}
 
     # test point generation
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
-    pts = points(g, T)
-    @test pts[1] == y
-    @test pts[2]  ≈ range(0, 2π*(1 - 1/Nx), length=Nx)/α # precision differences in operations
-    @test pts[3]  ≈ range(0, 2π*(1 - 1/Nz), length=Nz)/β # precision differences in operations
-    @test pts[4]  ≈ range(0,    (1 - 1/Nt), length=Nt)*T # mean they aren't exactly equal
+    pts = points(g, dealias=false)
+    @test pts[1][:] == y
+    @test pts[2][:]  ≈ range(0, 2π*(1 - 1/Nx), length=Nx)/α # precision differences in operations
+    @test pts[3][:]  ≈ range(0, 2π*(1 - 1/Nz), length=Nz)/β # precision differences in operations
+    @test pts[4][:]  ≈ range(0,    (1 - 1/Nt), length=Nt)   # mean they aren't exactly equal
     Nx_new = rand(Nx+2:2:81)
     Nz_new = rand(Nz+2:2:81)
     Nt_new = rand(Nt+2:2:81)
-    pts = points(g, T, (Nx_new, Nz_new, Nt_new))
-    @test pts[2]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α # precision differences in operations
-    @test pts[3]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β # precision differences in operations
-    @test pts[4]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)*T # mean they aren't exactly equal
+    pts = points(g, (Nx_new, Nz_new, Nt_new))
+    @test pts[2][:]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α # precision differences in operations
+    @test pts[3][:]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β # precision differences in operations
+    @test pts[4][:]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)   # mean they aren't exactly equal
+    @test points(g, dealias=true) == points(g, (ReSolverChannelFlow._padded_size.((Nx, Nz, Nt), Val(true))))
 
     # test growto
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
@@ -38,10 +38,10 @@
     Nz_new = rand(Nz+2:2:81)
     Nt_new = rand(Nt+2:2:81)
     g_new = growto(g, (Nx_new, Nz_new, Nt_new))
-    pts = points(g, 1.0)
-    pts_new = points(g_new, 1.0)
-    @test pts_new[1] == pts[1]
-    @test pts_new[2]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α # precision differences in operations
-    @test pts_new[3]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β # precision differences in operations
-    @test pts_new[4]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)   # mean they aren't exactly equal
+    pts = points(g)
+    pts_new = points(g_new)
+    @test pts_new[1]    == pts[1]
+    @test pts_new[2][:]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α # precision differences in operations
+    @test pts_new[3][:]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β # precision differences in operations
+    @test pts_new[4][:]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)   # mean they aren't exactly equal
 end

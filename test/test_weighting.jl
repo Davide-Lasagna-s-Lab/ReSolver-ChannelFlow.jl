@@ -33,8 +33,8 @@
     Ψ[:, :, 1, 1, 1] .= Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(Float64, Ny, M)).Q[:, 1:M]
 
     # construct fields
-    a = project(FFT(VectorField(g, (f1,), 2π)), Ψ)
-    b = project(FFT(VectorField(g, (f2,), 2π)), Ψ)
+    a = project(FFT(VectorField(g, f1)), Ψ)
+    b = project(FFT(VectorField(g, f2)), Ψ)
 
     # test weighting operation
     A = FarazmandWeight(2π, 2π, 2π)

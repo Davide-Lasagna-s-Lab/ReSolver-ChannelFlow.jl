@@ -4,26 +4,26 @@
 # ---------------------- #
 # navier-stokes operator #
 # ---------------------- #
-mutable struct CartesianPrimitiveNSE{G, T, FFT, A, B} <: NSE{FTField} # TODO: need to check performance when not fully typing FTField!
+mutable struct CartesianPrimitiveNSE{T, FFT, S, P}
               Re::T
               Ro::T
      const plans::FFT
-    const scache::Vector{VectorField{3, FTField{G, T, A}}}
-    const pcache::Vector{VectorField{3,   Field{G, T, B}}}
+    const scache::Vector{VectorField{3, S}}
+    const pcache::Vector{VectorField{3, P}}
 
     CartesianPrimitiveNSE(Re::T,
                           Ro::T,
                        plans::FFT,
-                      scache::Vector{<:VectorField{3, <:FTField{G, T, A}}},
-                      pcache::Vector{<:VectorField{3,   <:Field{G, T, B}}}) where {T, FFT, G, A, B} =
-        new{G, T, FFT, A, B}(Re, Ro, plans, scache, pcache)
+                      scache::Vector{<:VectorField{3, S}},
+                      pcache::Vector{<:VectorField{3, P}}) where {T, FFT, S, P} =
+        new{T, FFT, S, P}(Re, Ro, plans, scache, pcache)
 end
 
-function CartesianPrimitiveNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE) where {S, T}
-    plans = FFTPlans(S, (2, 3, 4), T, flags=flags)
+function CartesianPrimitiveNSE(g::ChannelGrid1D{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE) where {S, T}
+    plans = FFTPlans(g, flags=flags)
     scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:3]
     pcache = [VectorField([  Field(g, dealias=true) for _ in 1:3]...) for _ in 1:4]
-    CartesianPrimitiveNSE(T(Re), T(Ro), plans, scache, pcache)
+    return CartesianPrimitiveNSE(T(Re), T(Ro), plans, scache, pcache)
 end
 
 function (eq::CartesianPrimitiveNSE)(::Real,
@@ -55,7 +55,7 @@ function (eq::CartesianPrimitiveNSE)(::Real,
     for n in 1:3
         @. dUdx[n] = -U[1]*dUdx[n] - U[2]*dUdy[n] - U[3]*dUdz[n] # overwrite field to save memory
     end
-    eq.plans(out, dUdx, true) # add the result to the output
+    eq.plans(out, dUdx, add=true) # add the result to the output
 
     # coriolis term
     @. out[1] += eq.Ro*u[2]
@@ -73,7 +73,7 @@ struct Forward           <: Mode end
 struct AdjointDiscrete   <: Mode end
 struct AdjointContinuous <: Mode end
 
-mutable struct CartesianPrimitiveLNSE{MODE, T, FFT, S, P} <: LNSE{FTField}
+mutable struct CartesianPrimitiveLNSE{MODE, T, FFT, S, P}
               Re::T
               Ro::T
      const plans::FFT
@@ -88,8 +88,8 @@ mutable struct CartesianPrimitiveLNSE{MODE, T, FFT, S, P} <: LNSE{FTField}
         new{MODE, T, FFT, S, P}(Re, Ro, plans, scache, pcache)
 end
 
-function CartesianPrimitiveLNSE(g::Abstract1DChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE, mode::M=Forward()) where {S, T, M<:Mode}
-    plans = FFTPlans(S, (2, 3, 4), T, flags=flags)
+function CartesianPrimitiveLNSE(g::ChannelGrid1D{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE, mode::M=Forward()) where {S, T, M<:Mode}
+    plans = FFTPlans(g, flags=flags)
     scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:4]
     pcache = [VectorField([  Field(g, dealias=true) for _ in 1:3]...) for _ in 1:8]
     return CartesianPrimitiveLNSE{M}(T(Re), T(Ro), plans, scache, pcache)
@@ -159,7 +159,7 @@ function (eq::CartesianPrimitiveLNSE{Forward})(::Real,
         @. dVdx[n]  = -U[1]*dVdx[n] - U[2]*dVdy[n] - U[3]*dVdz[n] # overwrite field to save memory
         @. dVdx[n] -=  V[1]*dUdx[n] + V[2]*dUdy[n] + V[3]*dUdz[n] # overwrite field to save memory
     end
-    eq.plans(out, dVdx, true) # add the result to the output
+    eq.plans(out, dVdx, add=true) # add the result to the output
 
     # coriolis term
     @. out[1] += eq.Ro*v[2]
@@ -209,8 +209,8 @@ function (eq::CartesianPrimitiveLNSE{AdjointContinuous})(::Real,
         @. dVdz[2] -= V[i]*dUdy[i] # overwrite field to save memory
         @. dVdz[3] -= V[i]*dUdz[i] # overwrite field to save memory
     end
-    eq.plans(out, dVdx, true) # add the result to the output
-    eq.plans(out, dVdz, true) # add the result to the output
+    eq.plans(out, dVdx, add=true) # add the result to the output
+    eq.plans(out, dVdz, add=true) # add the result to the output
 
     # coriolis term
     @. out[1] -= eq.Ro*v[2]
@@ -262,7 +262,7 @@ function (eq::CartesianPrimitiveLNSE{AdjointDiscrete})(::Real,
         @. U1V[2] -= V[n]*dUdy[n] # overwrite field to save memory
         @. U1V[3] -= V[n]*dUdz[n] # overwrite field to save memory
     end
-    eq.plans(out, U1V, true) # add the result to the output
+    eq.plans(out, U1V, add=true) # add the result to the output
 
     # coriolis term
     @. out[1] -= eq.Ro*v[2]
@@ -270,6 +270,3 @@ function (eq::CartesianPrimitiveLNSE{AdjointDiscrete})(::Real,
 
     return out
 end
-
-# ! remove if I can
-NSEBase.ndim(::Union{CartesianPrimitiveNSE, CartesianPrimitiveLNSE}) = 3

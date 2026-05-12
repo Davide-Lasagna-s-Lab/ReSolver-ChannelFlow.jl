@@ -1,7 +1,8 @@
 # Utility object to allow dispatch for different indexing methods on FTField
 
-# ?: I wonder if I could define a @modenumber macro that converts the indexes at parse time and keeps the nice loops?
-
+# -------------------- #
+# mode number indexing #
+# -------------------- #
 struct ModeNumber
     nx::Int
     nz::Int
@@ -23,6 +24,44 @@ function _convert_modenumber(n::ModeNumber, Nz, Nt)
     return _nx, _nz, _nt, do_conj
 end
 
+Base.@propagate_inbounds function Base.getindex(u::FTField{G}, ny::Int, n::ModeNumber) where {S, G<:ChannelGrid1D{S}}
+    _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
+    @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
+    @inbounds val = do_conj ? conj(u[ny, _nx, _nz, _nt]) : u[ny, _nx, _nz, _nt]
+    return val
+end
+Base.@propagate_inbounds function Base.setindex!(u::FTField{G}, val, ny::Int, n::ModeNumber) where {S, T, G<:ChannelGrid1D{S, T}}
+    _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
+    _nz_sym = _nz != 1 ? S[3] - _nz + 2 : _nz
+    _nt_sym = _nt != 1 ? S[4] - _nt + 2 : _nt
+    val = (_nx == _nz == _nt == 1) ? Complex{T}(real(val)) : val
+    @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
+                @inbounds u[ny, _nx, _nz,     _nt]     = do_conj ? conj(val) :      val
+    _nx == 1 && @inbounds u[ny, _nx, _nz_sym, _nt_sym] = do_conj ?      val  : conj(val)
+    return val
+end
+
+Base.@propagate_inbounds function Base.getindex(a::ProjectedField{<:FTField{G}}, ny::Int, n::ModeNumber) where {S, G<:ChannelGrid1D{S}}
+    _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
+    @boundscheck checkbounds(a, ny, _nx, _nz, _nt)
+    @inbounds val = do_conj ? conj(a[ny, _nx, _nz, _nt]) : a[ny, _nx, _nz, _nt]
+    return val
+end
+Base.@propagate_inbounds function Base.setindex!(a::ProjectedField{<:FTField{G}, T}, val, ny::Int, n::ModeNumber) where {S, G<:ChannelGrid1D{S}, T}
+    _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
+    _nz_sym = _nz != 1 ? S[3] - _nz + 2 : _nz
+    _nt_sym = _nt != 1 ? S[3] - _nt + 2 : _nt
+    val = (_nx == _nz == _nt == 1) ? Complex{T}(real(val)) : val
+    @boundscheck checkbounds(a, ny, _nx, _nz, _nt)
+                @inbounds a[ny, _nx, _nz,     _nt]     = do_conj ? conj(val) :      val
+    _nx == 1 && @inbounds a[ny, _nx, _nz_sym, _nt_sym] = do_conj ?      val  : conj(val)
+    return val
+end
+
+
+# ----------- #
+# macro stuff #
+# ----------- #
 macro loop_modes(Nt, Nz, Nx, expr)
     quote
         for $(esc(:_nt)) in 1:($(esc(Nt)) >> 1) + 1

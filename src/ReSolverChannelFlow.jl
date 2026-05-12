@@ -20,8 +20,7 @@ export ProjectedNSE
 
 include("grid.jl")
 include("modenumber.jl")
-include("ftfield.jl")
-include("field.jl")
+include("interface.jl")
 include("derivatives.jl")
 include("shifts.jl")
 include("norms.jl")

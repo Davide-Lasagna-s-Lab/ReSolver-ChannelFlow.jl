@@ -1,11 +1,11 @@
 @testset "Field symmetry shifts                 " begin
     # define functions
-    u_funs       = ((y, x, z, t)->y + (1 - y^2)*cos(x)*cos(z)*cos(t),
-                    (y, x, z, t)->-(π/2)*cos(π*y/2)^2*cos(x)*sin(z)*sin(t),
-                    (y, x, z, t)->(π/2)*sin(π*y)*cos(x)*cos(z)*sin(t))
-    u_shift_funs = ((y, x, z, t)->y + (1 - y^2)*cos(x + sx)*cos(z + sz)*cos(t + st*2π),
-                    (y, x, z, t)->-(π/2)*cos(π*y/2)^2*cos(x + sx)*sin(z + sz)*sin(t + st*2π),
-                    (y, x, z, t)->(π/2)*sin(π*y)*cos(x + sx)*cos(z + sz)*sin(t + st*2π))
+    u_funs       = ((y, x, z, t)->y + (1 - y^2)*cos(x)*cos(z)*cos(2π*t),
+                    (y, x, z, t)->-(π/2)*cos(π*y/2)^2*cos(x)*sin(z)*sin(2π*t),
+                    (y, x, z, t)->(π/2)*sin(π*y)*cos(x)*cos(z)*sin(2π*t))
+    u_shift_funs = ((y, x, z, t)->y + (1 - y^2)*cos(x + sx)*cos(z + sz)*cos(2π*(t + st)),
+                    (y, x, z, t)->-(π/2)*cos(π*y/2)^2*cos(x + sx)*sin(z + sz)*sin(2π*(t + st)),
+                    (y, x, z, t)->(π/2)*sin(π*y)*cos(x + sx)*cos(z + sz)*sin(2π*(t + st)))
 
     # construct grid
     Ny = 16; Nx = 15; Nz = 33; Nt = 33
@@ -29,8 +29,8 @@
 
     # test shifts
     sx = 2π*rand(); sz = 2π*rand(); st = rand()
-    u       = FFT(VectorField(g, u_funs,       2π))
-    u_shift = FFT(VectorField(g, u_shift_funs, 2π))
+    u       = FFT(VectorField(g, u_funs...      ))
+    u_shift = FFT(VectorField(g, u_shift_funs...))
     @test shift!(     u,  (0,  0,  0))  === u
     @test shift!(copy(u), (sx, sz, st)) ≈   u_shift atol=1e-12
     # TODO: these tests needs to be added back once NSEBase.jl is better

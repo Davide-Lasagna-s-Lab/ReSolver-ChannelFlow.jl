@@ -1,8 +1,8 @@
 # Implementation of the RPCF grid
 
-abstract type Abstract1DChannelGrid{S, T} end
+abstract type ChannelGrid1D{S, T} <: AbstractGrid{T, 4, (2, 3, 4)} end
 
-struct ChannelGrid{S, T, D1, D2, D3, D4} <: Abstract1DChannelGrid{S, T}
+struct ChannelGrid{S, T, ADJ, D1, D2, D3, D4} <: ChannelGrid1D{S, T}
     y::Vector{T}
     Dy::D1
     Dy2::D2
@@ -12,14 +12,15 @@ struct ChannelGrid{S, T, D1, D2, D3, D4} <: Abstract1DChannelGrid{S, T}
     α::T
     β::T
 
-    ChannelGrid{S, T}(y::Vector{T},
-                     Dy::AbstractMatrix{T},
-                    Dy2::AbstractMatrix{T},
-                    Dya::AbstractMatrix{T},
-                   Dy2a::AbstractMatrix{T},
-                     ws::Vector{T},
-                      α::T,
-                      β::T) where {S, T} = new{S, T, typeof(Dy), typeof(Dy2), typeof(Dya), typeof(Dy2a)}(y, Dy, Dy2, Dya, Dy2a, ws, α, β)
+    ChannelGrid{S, T, ADJ}(y::Vector{T},
+                          Dy::AbstractMatrix{T},
+                         Dy2::AbstractMatrix{T},
+                         Dya::AbstractMatrix{T},
+                        Dy2a::AbstractMatrix{T},
+                          ws::Vector{T},
+                           α::T,
+                           β::T) where {S, T, ADJ} =
+        new{S, T, ADJ, typeof(Dy), typeof(Dy2), typeof(Dya), typeof(Dy2a)}(y, Dy, Dy2, Dya, Dy2a, ws, α, β)
 end
 
 function ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, ::Type{T}=Float64; adjoint_diff::Bool=true) where {T}
@@ -30,25 +31,40 @@ function ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, ::Type{T}=Float64; adjo
     Dy2 = T.(Dy2)
     Dya  = adjoint_diff ? adjoint(Dy,  ws) : Dy
     Dy2a = adjoint_diff ? adjoint(Dy2, ws) : Dy2
-    return ChannelGrid{(length(y), Nx, Nz, Nt), T}(T.(y), Dy, Dy2, Dya, Dy2a, ws, T(α), T(β))
+    return ChannelGrid{(length(y), Nx, Nz, Nt), T, adjoint_diff}(T.(y), Dy, Dy2, Dya, Dy2a, ws, T(α), T(β))
 end
 
-# ! change to convert
-Base.similar(g::ChannelGrid{S, T}, ::Type{U}=T) where {S, T, U} =
-    U == T ? g : ChannelGrid{S, U}(U.(g.y), U.(g.Dy), U.(g.Dy2), U.(g.Dya), U.(g.Dy2a), U.(g.ws), U(g.α), U(g.β))
+Base.convert(::Type{T}, g::ChannelGrid{S, T}) where {S, T} = g
+Base.convert(::Type{T}, g::ChannelGrid{S, <:Any, false}) where {T, S} =
+    ChannelGrid{S, T, false}(T.(g.y), T.(g.Dy), T.(g.Dy2), T.(g.Dya), T.(g.Dy2a), T.(g.ws), T(g.α), T(g.β))
+function Base.convert(::Type{T}, g::ChannelGrid{S, <:Any, true}) where {T, S}
+    Dy = T.(g.Dy)
+    Dy2 = T.(g.Dy2)
+    ws = T.(g.ws)
+    return ChannelGrid{S, T, true}(T.(g.y), Dy, Dy2, adjoint(Dy, ws), adjoint(Dy2, ws), ws, T(g.α), T(g.β))
+end
+Base.size(::ChannelGrid{S}) where {S} = S
+NSEBase.fft_norm(::ChannelGrid{S}) where {S} = prod(S[2:4])
 
 # get points from grid
-points(g::ChannelGrid{S}, T) where {S}       = (                           g.y,
-                                                (0:(S[2] - 1))/(S[2])*(2π/g.α),
-                                                (0:(S[3] - 1))/(S[3])*(2π/g.β),
-                                                (0:(S[4] - 1))/(S[4])*T)
-points(g::ChannelGrid, T, S::NTuple{3, Int}) = (                           g.y,
-                                                (0:(S[1] - 1))/(S[1])*(2π/g.α),
-                                                (0:(S[2] - 1))/(S[2])*(2π/g.β),
-                                                (0:(S[3] - 1))/(S[3])*T)
+NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} = (                                                          reshape(g.y, :, 1, 1, 1),
+                                                              reshape(_equidistant_points(_padded_size(S[2], Val(dealias)), 2π/g.α), 1, :, 1, 1),
+                                                              reshape(_equidistant_points(_padded_size(S[3], Val(dealias)), 2π/g.β), 1, 1, :, 1),
+                                                              reshape(_equidistant_points(_padded_size(S[4], Val(dealias))),         1, 1, 1, :))
+NSEBase.points(g::ChannelGrid, S::NTuple{3, Int})          = (                              reshape(g.y, :, 1, 1, 1),
+                                                              reshape(_equidistant_points(S[1], 2π/g.α), 1, :, 1, 1),
+                                                              reshape(_equidistant_points(S[2], 2π/g.β), 1, 1, :, 1),
+                                                              reshape(_equidistant_points(S[3]),         1, 1, 1, :))
+
+_equidistant_points(N, L) = (0:(N - 1))/(N)*L
+_equidistant_points(N)    = (0:(N - 1))/(N)
+
+_padded_size(s::Int, ::Val{true})  = (3*s)>>1 + 1 - ((3*s)>>1)&1
+_padded_size(s::Int, ::Val{false}) = s
 
 # grow grid size
-growto(g::ChannelGrid{S, T}, N::NTuple{3, Int}) where {S, T} = ChannelGrid{(S[1], N...), T}(g.y, get_fields(g)...)
+growto(g::ChannelGrid{S, T, ADJ}, N::NTuple{3, Int}) where {S, T, ADJ} =
+    ChannelGrid{(S[1], N...), T, ADJ}(g.y, get_fields(g)...)
 
 # utility method to make mode generation easier with Resolvent.jl
 get_fields(g::ChannelGrid) = (g.Dy, g.Dy2, g.Dya, g.Dy2a, g.ws, g.α, g.β)
