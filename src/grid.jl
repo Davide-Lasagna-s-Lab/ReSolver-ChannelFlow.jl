@@ -59,7 +59,7 @@ NSEBase.points(g::ChannelGrid, S::NTuple{3, Int})          = (                  
 _equidistant_points(N, L) = (0:(N - 1))/(N)*L
 _equidistant_points(N)    = (0:(N - 1))/(N)
 
-_padded_size(s::Int, ::Val{true})  = (3*s)>>1 + 1 - ((3*s)>>1)&1
+_padded_size(s::Int, ::Val{true})  = cld(3*s, 2) | 1
 _padded_size(s::Int, ::Val{false}) = s
 
 # grow grid size
