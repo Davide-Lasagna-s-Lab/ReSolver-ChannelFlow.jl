@@ -30,7 +30,7 @@
     @test pts[2][:]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α # precision differences in operations
     @test pts[3][:]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β # precision differences in operations
     @test pts[4][:]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)   # mean they aren't exactly equal
-    @test points(g, dealias=true) == points(g, (ReSolverChannelFlow._padded_size.((Nx, Nz, Nt), Val(true))))
+    @test points(g, dealias=true) == points(g, (ReSolverChannelFlow.NSEBase.get_padded_size((Nx, Nz, Nt), (1, 2, 3))))
 
     # test growto
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)

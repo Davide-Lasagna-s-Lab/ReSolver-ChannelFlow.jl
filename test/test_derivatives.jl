@@ -21,10 +21,10 @@
 
     # test values of derivatives
     u = FFT(Field(g, u_fun))
-    @test ReSolverChannelFlow.ddx1!(     FTField(g), u) ≈ FFT(Field(g, dudx_fun))
-    @test ReSolverChannelFlow.ddx2!(     FTField(g), u) ≈ FFT(Field(g, dudy_fun))
-    @test ReSolverChannelFlow.ddx3!(     FTField(g), u) ≈ FFT(Field(g, dudz_fun))
-    @test ReSolverChannelFlow.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
+    @test ReSolverChannelFlow.NSEBase.ddx_x!(    FTField(g), u) ≈ FFT(Field(g, dudx_fun))
+    @test ReSolverChannelFlow.NSEBase.ddx_y!(    FTField(g), u) ≈ FFT(Field(g, dudy_fun))
+    @test ReSolverChannelFlow.NSEBase.ddx_z!(    FTField(g), u) ≈ FFT(Field(g, dudz_fun))
+    @test ReSolverChannelFlow.NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
 
     # test time derivative of projected field
     M = 10
@@ -37,13 +37,13 @@
         Ψ[:, m, 1, 1, 1] .= real.(Ψ[:, m, 1, 1, 1])
     end
     a = project(FFT(VectorField(g, u_fun)), Ψ)
-    @test ReSolverChannelFlow.dds!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
+    @test ReSolverChannelFlow.NSEBase.dds!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
 
     # test allocation
     fun(dx, a, b) = @allocated dx(a, b)
-    @test fun(ReSolverChannelFlow.ddx1!,      FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.ddx2!,      FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.ddx3!,      FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.laplacian!, FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.dds!,       similar(a), a) == 0
+    @test fun(ReSolverChannelFlow.NSEBase.ddx_x!,      FTField(g), u) == 0
+    @test fun(ReSolverChannelFlow.NSEBase.ddx_y!,      FTField(g), u) == 0
+    @test fun(ReSolverChannelFlow.NSEBase.ddx_z!,      FTField(g), u) == 0
+    @test fun(ReSolverChannelFlow.NSEBase.laplacian!, FTField(g), u) == 0
+    @test fun(ReSolverChannelFlow.NSEBase.dds!,       similar(a), a) == 0
 end

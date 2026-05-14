@@ -11,20 +11,21 @@ export Field
 export VectorField
 export ProjectedField, modes, project!, project, expand!, expand
 export FFT, IFFT, FFTPlans
-export dds!, ddx1!, ddx2!, ddx3!, laplacian!
+export dds!, ddx_x!, ddx_y!, ddx_z!, laplacian!
 export shift!
 export dot, norm, normdiff, minnormdiff
 export FarazmandWeight
-export CartesianPrimitiveNSE, CartesianPrimitiveLNSE, CartesianPrimitiveALNSE, Forward, AdjointDiscrete, AdjointContinuous
-export ProjectedNSE
+export CartesianPrimitive, CartesianPrimitiveNSE, CartesianPrimitiveLNSE, Forward, AdjointDiscrete, AdjointContinuous
+export CartesianPrimitiveRotatingNSE, CartesianPrimitiveRotatingLNSE
+export CoriolisForce
+export ProjectedNSE, construct_equations
 
 include("grid.jl")
 include("modenumber.jl")
 include("interface.jl")
-include("derivatives.jl")
 include("shifts.jl")
 include("norms.jl")
 include("weighting.jl")
-include("cartesianprimitive.jl")
+include("equations.jl")
 
 end

@@ -1,8 +1,18 @@
-# Implementation of the RPCF grid
+# Implementation of the channel grid with one inhomogeneous
+# (wall-normal) direction.
 
-abstract type ChannelGrid1D{S, T} <: AbstractGrid{T, 4, (2, 3, 4)} end
+# --------------------- #
+# abstract channel grid #
+# --------------------- #
+abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, (2, 1, 3, 4), (2, 3, 4)} end
 
-struct ChannelGrid{S, T, ADJ, D1, D2, D3, D4} <: ChannelGrid1D{S, T}
+Base.size(::AbstractChannelGrid{S}) where {S} = S
+
+
+# --------------------- #
+# concrete channel grid #
+# --------------------- #
+struct ChannelGrid{S, T, ADJ, D1, D2, D3, D4} <: AbstractChannelGrid{S, T}
     y::Vector{T}
     Dy::D1
     Dy2::D2
@@ -43,24 +53,21 @@ function Base.convert(::Type{T}, g::ChannelGrid{S, <:Any, true}) where {T, S}
     ws = T.(g.ws)
     return ChannelGrid{S, T, true}(T.(g.y), Dy, Dy2, adjoint(Dy, ws), adjoint(Dy2, ws), ws, T(g.α), T(g.β))
 end
-Base.size(::ChannelGrid{S}) where {S} = S
-NSEBase.fft_norm(::ChannelGrid{S}) where {S} = prod(S[2:4])
 
 # get points from grid
-NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} = (                                                          reshape(g.y, :, 1, 1, 1),
-                                                              reshape(_equidistant_points(_padded_size(S[2], Val(dealias)), 2π/g.α), 1, :, 1, 1),
-                                                              reshape(_equidistant_points(_padded_size(S[3], Val(dealias)), 2π/g.β), 1, 1, :, 1),
-                                                              reshape(_equidistant_points(_padded_size(S[4], Val(dealias))),         1, 1, 1, :))
-NSEBase.points(g::ChannelGrid, S::NTuple{3, Int})          = (                              reshape(g.y, :, 1, 1, 1),
-                                                              reshape(_equidistant_points(S[1], 2π/g.α), 1, :, 1, 1),
-                                                              reshape(_equidistant_points(S[2], 2π/g.β), 1, 1, :, 1),
-                                                              reshape(_equidistant_points(S[3]),         1, 1, 1, :))
+NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} =
+    points(g, (dealias ? NSEBase.get_padded_size(S, NSEBase.fft_dims(g)) : S)[2:end])
+NSEBase.points(g::ChannelGrid, S::NTuple{3, Int}) = (reshape(g.y,                      :, 1, 1, 1),
+                                                     reshape(_equal_pts(S[1], 2π/g.α), 1, :, 1, 1),
+                                                     reshape(_equal_pts(S[2], 2π/g.β), 1, 1, :, 1),
+                                                     reshape(_equal_pts(S[3]),         1, 1, 1, :))
 
-_equidistant_points(N, L) = (0:(N - 1))/(N)*L
-_equidistant_points(N)    = (0:(N - 1))/(N)
+_equal_pts(N, L) = (0:(N - 1))/(N)*L
+_equal_pts(N)    = (0:(N - 1))/(N)
 
-_padded_size(s::Int, ::Val{true})  = cld(3*s, 2) | 1
-_padded_size(s::Int, ::Val{false}) = s
+# dim 2 = streamwise (x), dim 3 = spanwise (z), dim 4 = time; α = 2π/Lx, β = 2π/Lz
+NSEBase.wavenumber_scale(g::AbstractChannelGrid{S, T}, dim::Int) where {S, T} =
+    dim == 2 ? g.α : dim == 3 ? g.β : one(T)
 
 # grow grid size
 growto(g::ChannelGrid{S, T, ADJ}, N::NTuple{3, Int}) where {S, T, ADJ} =

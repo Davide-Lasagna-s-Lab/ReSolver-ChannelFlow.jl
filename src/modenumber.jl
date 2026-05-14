@@ -24,13 +24,13 @@ function _convert_modenumber(n::ModeNumber, Nz, Nt)
     return _nx, _nz, _nt, do_conj
 end
 
-Base.@propagate_inbounds function Base.getindex(u::FTField{G}, ny::Int, n::ModeNumber) where {S, G<:ChannelGrid1D{S}}
+Base.@propagate_inbounds function Base.getindex(u::FTField{G}, ny::Int, n::ModeNumber) where {S, G<:AbstractChannelGrid{S}}
     _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
     @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
     @inbounds val = do_conj ? conj(u[ny, _nx, _nz, _nt]) : u[ny, _nx, _nz, _nt]
     return val
 end
-Base.@propagate_inbounds function Base.setindex!(u::FTField{G}, val, ny::Int, n::ModeNumber) where {S, T, G<:ChannelGrid1D{S, T}}
+Base.@propagate_inbounds function Base.setindex!(u::FTField{G}, val, ny::Int, n::ModeNumber) where {S, T, G<:AbstractChannelGrid{S, T}}
     _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
     _nz_sym = _nz != 1 ? S[3] - _nz + 2 : _nz
     _nt_sym = _nt != 1 ? S[4] - _nt + 2 : _nt
@@ -41,13 +41,13 @@ Base.@propagate_inbounds function Base.setindex!(u::FTField{G}, val, ny::Int, n:
     return val
 end
 
-Base.@propagate_inbounds function Base.getindex(a::ProjectedField{<:FTField{G}}, ny::Int, n::ModeNumber) where {S, G<:ChannelGrid1D{S}}
+Base.@propagate_inbounds function Base.getindex(a::ProjectedField{<:FTField{G}}, ny::Int, n::ModeNumber) where {S, G<:AbstractChannelGrid{S}}
     _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
     @boundscheck checkbounds(a, ny, _nx, _nz, _nt)
     @inbounds val = do_conj ? conj(a[ny, _nx, _nz, _nt]) : a[ny, _nx, _nz, _nt]
     return val
 end
-Base.@propagate_inbounds function Base.setindex!(a::ProjectedField{<:FTField{G}, T}, val, ny::Int, n::ModeNumber) where {S, G<:ChannelGrid1D{S}, T}
+Base.@propagate_inbounds function Base.setindex!(a::ProjectedField{<:FTField{G}, T}, val, ny::Int, n::ModeNumber) where {S, G<:AbstractChannelGrid{S}, T}
     _nx, _nz, _nt, do_conj = _convert_modenumber(n, S[3], S[4])
     _nz_sym = _nz != 1 ? S[3] - _nz + 2 : _nz
     _nt_sym = _nt != 1 ? S[3] - _nt + 2 : _nt
