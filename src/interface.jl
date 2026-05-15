@@ -10,7 +10,23 @@ function growto(u::FTField{G}, N::NTuple{3, Int}) where {S, G<:AbstractChannelGr
     end
     return out
 end
-growto(u::VectorField{N, <:FTField}, S::NTuple{3, Int}) where {N} = VectorField([growto(u[n], S) for n in 1:N]...)
+
+Base.@propagate_inbounds function Base.getindex(u::FTField{G}, ny::Int, n::ModeNumber) where {S, G<:AbstractChannelGrid{S}}
+    _nx, _nz, _nt, do_conj = NSEBase._modenumber_to_indices(grid(u), n)
+    @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
+    @inbounds val = do_conj ? conj(u[ny, _nx, _nz, _nt]) : u[ny, _nx, _nz, _nt]
+    return val
+end
+Base.@propagate_inbounds function Base.setindex!(u::FTField{G}, val, ny::Int, n::ModeNumber) where {S, T, G<:AbstractChannelGrid{S, T}}
+    _nx, _nz, _nt, do_conj = NSEBase._modenumber_to_indices(grid(u), n)
+    _nz_sym = _nz != 1 ? S[3] - _nz + 2 : _nz
+    _nt_sym = _nt != 1 ? S[4] - _nt + 2 : _nt
+    val = (_nx == _nz == _nt == 1) ? Complex{T}(real(val)) : val
+    @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
+                @inbounds u[ny, _nx, _nz,     _nt]     = do_conj ? conj(val) :      val
+    _nx == 1 && @inbounds u[ny, _nx, _nz_sym, _nt_sym] = do_conj ?      val  : conj(val)
+    return val
+end
 
 
 # ------------------- #
@@ -62,34 +78,6 @@ function NSEBase.expand!(u::VectorField{N, <:FTField{G}},
     end
     return u
 end
-
-# function dds!(out::ProjectedField{G}, a::ProjectedField{G}) where {S, G<:ChannelGrid1D{S}}
-#     @loop_modes S[4] S[3] S[2] for m in axes(a, 1)
-#         @inbounds out[m, _nx, _nz, _nt] = 1im*nt*a[m, _nx, _nz, _nt]
-#     end
-#     return out
-# end
-
-# function LinearAlgebra.dot(a::ProjectedField{G}, b::ProjectedField{G}) where {S, T, G<:ChannelGrid1D{S, T}}
-#     sum = zero(T)
-#     @loop_nznt S[4] S[3] for m in axes(a, 1)
-#         @inbounds sum += real(dot(a[m, 1, _nz, _nt], b[m, 1, _nz, _nt]))
-#     end
-#     @loop_nznt S[4] S[3] for _nx in 2:(S[2] >> 1) + 1, m in axes(a, 1)
-#         @inbounds sum += 2*real(dot(a[m, _nx, _nz, _nt], b[m, _nx, _nz, _nt]))
-#     end
-#     return sum/2
-# end
-
-# function NSEBase.ProjectedNSE(g::ChannelGrid1D{S, T}, Re; Ro=0, base::Vector=g.y, flags=FFTW.EXHAUSTIVE, mode=AdjointDiscrete()) where {S, T}
-#     # construct operators
-#     plans = FFTPlans(S, (2, 3, 4), T, flags=flags)
-#     scache = [VectorField([FTField(g)               for _ in 1:3]...) for _ in 1:4]
-#     pcache = [VectorField([  Field(g, dealias=true) for _ in 1:3]...) for _ in 1:8]
-#     nl = CartesianPrimitiveNSE(T(Re), T(Ro), plans, scache, pcache)
-#     ln = CartesianPrimitiveLNSE{typeof(mode)}(T(Re), T(Ro), plans, scache, pcache)
-#     return ProjectedNSE(g, 3, nl, ln, T.(base))
-# end
 
 function save_field(a::ProjectedField{<:FTField{<:AbstractChannelGrid}}; path="./a.jld2")
     jldopen(path, "w") do f

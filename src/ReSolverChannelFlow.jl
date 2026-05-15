@@ -21,7 +21,7 @@ export CoriolisForce
 export ProjectedNSE, construct_equations
 
 include("grid.jl")
-include("modenumber.jl")
+include("utility.jl")
 include("interface.jl")
 include("shifts.jl")
 include("norms.jl")
