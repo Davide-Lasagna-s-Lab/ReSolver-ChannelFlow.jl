@@ -70,7 +70,7 @@ NSEBase.wavenumber_scale(g::AbstractChannelGrid{S, T}, dim::Int) where {S, T} =
     dim == 2 ? g.α : dim == 3 ? g.β : one(T)
 
 # grow grid size
-growto(g::ChannelGrid{S, T, ADJ}, N::NTuple{3, Int}) where {S, T, ADJ} =
+NSEBase.growto(g::ChannelGrid{S, T, ADJ}, N::NTuple{3, Int}) where {S, T, ADJ} =
     ChannelGrid{(S[1], N...), T, ADJ}(g.y, get_fields(g)...)
 
 # utility method to make mode generation easier with Resolvent.jl
