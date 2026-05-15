@@ -15,3 +15,6 @@ NSEBase = {path = "/home/tpb1y19/Code/NSEBase.jl/"}
 [compat]
 JLD2 = "0.6.3"
 LinearAlgebra = "1.11.0"
+
+[workspace]
+projects = ["test"]
