@@ -29,15 +29,13 @@ function xshift!(u::VectorField{N, <:FTField}, sx) where {N}
     return u
 end
 xshift!(u::FTField{<:AbstractChannelGrid{S}}, sx) where {S} = _perform_xshift!(u, sx, S[1], S[2], S[3], S[4])
-# TODO: needs to be added back once extra grid structure has been added back to NSEBase.jl
-# xshift!(a::ProjectedField{F}, sx) where {S, F<:FTField{<:ChannelGrid{S}}} = _perform_xshift!(a, sx, size(a, 1), S[2], S[3], S[4])
 
 function _perform_xshift!(field, sx, S1, S2, S3, S4)
     sx == 0 && return field
     for nx in 0:(S2 >> 1)
         val = cis(nx*sx*grid(field).α)
-        for nt in -(S4 >> 1):(S4 >> 1), nz in -(S3 >> 1):(S3 >> 1), m in 1:S1
-            @inbounds field[m, ModeNumber(nx, nz, nt)] *= val
+        for nt in -(S4 >> 1):(S4 >> 1), nz in -(S3 >> 1):(S3 >> 1), ny in 1:S1
+            @inbounds field[ModeNumber(nx, nz, nt), ny] *= val
         end
     end
     return field
@@ -53,14 +51,13 @@ function zshift!(u::VectorField{N, <:FTField}, sz) where {N}
     return u
 end
 zshift!(u::FTField{<:AbstractChannelGrid{S}}, sz) where {S} = _perform_zshift!(u, sz, S[1], S[2], S[3], S[4])
-# zshift!(a::ProjectedField{F}, sz) where {S, F<:FTField{<:ChannelGrid{S}}} = _perform_zshift!(a, sz, size(a, 1), S[2], S[3], S[4])
 
 function _perform_zshift!(field, sz, S1, S2, S3, S4)
     sz == 0 && return field
     for nz in -(S3 >> 1):(S3 >> 1)
         val = cis(nz*sz*grid(field).β)
-        for nt in -(S4 >> 1):(S4 >> 1), nx in 0:(S2 >> 1), m in 1:S1
-            @inbounds field[m, ModeNumber(nx, nz, nt)] *= val
+        for nt in -(S4 >> 1):(S4 >> 1), nx in 0:(S2 >> 1), ny in 1:S1
+            @inbounds field[ModeNumber(nx, nz, nt), ny] *= val
         end
     end
     return field
@@ -77,14 +74,13 @@ function tshift!(u::VectorField{N, <:FTField}, st) where {N}
     return u
 end
 tshift!(u::FTField{<:AbstractChannelGrid{S}}, st) where {S} = _perform_tshift!(u, st, S[1], S[2], S[3], S[4])
-# tshift!(a::ProjectedField{F}, st) where {S, F<:FTField{<:ChannelGrid{S}}} = _perform_tshift!(a, st, size(a, 1), S[2], S[3], S[4])
 
 function _perform_tshift!(field, st, S1, S2, S3, S4)
     st == 0 && return field
     for nt in -(S4 >> 1):(S4 >> 1)
         val = cispi(2*nt*st)
-        for nz in -(S3 >> 1):(S3 >> 1), nx in 0:(S2 >> 1), m in 1:S1
-            @inbounds field[m, ModeNumber(nx, nz, nt)] *= val
+        for nz in -(S3 >> 1):(S3 >> 1), nx in 0:(S2 >> 1), ny in 1:S1
+            @inbounds field[ModeNumber(nx, nz, nt), ny] *= val
         end
     end
     return field

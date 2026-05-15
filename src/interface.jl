@@ -11,23 +11,6 @@ function NSEBase.growto(u::FTField{G}, N::NTuple{3, Int}) where {S, G<:AbstractC
     return out
 end
 
-Base.@propagate_inbounds function Base.getindex(u::FTField{G}, ny::Int, n::ModeNumber) where {S, G<:AbstractChannelGrid{S}}
-    _nx, _nz, _nt, do_conj = NSEBase._modenumber_to_indices(grid(u), n)
-    @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
-    @inbounds val = do_conj ? conj(u[ny, _nx, _nz, _nt]) : u[ny, _nx, _nz, _nt]
-    return val
-end
-Base.@propagate_inbounds function Base.setindex!(u::FTField{G}, val, ny::Int, n::ModeNumber) where {S, T, G<:AbstractChannelGrid{S, T}}
-    _nx, _nz, _nt, do_conj = NSEBase._modenumber_to_indices(grid(u), n)
-    _nz_sym = _nz != 1 ? S[3] - _nz + 2 : _nz
-    _nt_sym = _nt != 1 ? S[4] - _nt + 2 : _nt
-    val = (_nx == _nz == _nt == 1) ? Complex{T}(real(val)) : val
-    @boundscheck checkbounds(u, ny, _nx, _nz, _nt)
-                @inbounds u[ny, _nx, _nz,     _nt]     = do_conj ? conj(val) :      val
-    _nx == 1 && @inbounds u[ny, _nx, _nz_sym, _nt_sym] = do_conj ?      val  : conj(val)
-    return val
-end
-
 
 # ------------------- #
 # VectorField methods #
@@ -53,6 +36,8 @@ NSEBase.no_of_modes(modes::Array{ComplexF64, 5}) = size(modes, 2)
 @inline _channel_int(u, ws, v, N) = sum(ws[i]*dot(u[i], v[i]) for i in 1:N)
 @inline _get_mode(modes, Ny, n, m, nx, nz, nt) = @view(modes[(Ny*(n - 1) + 1):Ny*n, m, nx, nz, nt])
 
+
+# TODO: implement these generically in NSEBase.jl
 NSEBase.project!(a::ProjectedField{G},
                  u::VectorField{N, <:FTField{G}}) where {S, T, G<:AbstractChannelGrid{S, T}, N} = _project!(a, u, S, N, T)
 function _project!(a, u, S, N, T)
