@@ -3,6 +3,7 @@
 # ----------------------- #
 # standard inner products #
 # ----------------------- #
+# TODO: definitiely possible to do generically in NSEBase.jl with the ModeNumber view indexing and a user-defined dot on the resulting slice
 function LinearAlgebra.dot(u::FTField{G}, v::FTField{G}) where {S, T, G<:AbstractChannelGrid{S, T}}
     sum = zero(T)
     @loop_nznt S[4] S[3] for ny in 1:S[1]
@@ -74,7 +75,7 @@ function minnormdiff(u::Union{FTField{G}, VectorField{D, <:FTField{G}}, Projecte
     for ti in 0:N[3] - 1
         for zi in 0:N[2] - 1
             for xi in 0:N[1] - 1
-                diff = normdiff(u, tmp1, tmp2)
+                diff = normdiff(u, tmp1, (0, 0, 0), tmp2)
                 if diff < min_diff
                     min_diff = diff
                     sx_min = _sx*xi
