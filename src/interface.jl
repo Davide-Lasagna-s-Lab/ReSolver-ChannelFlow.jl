@@ -1,16 +1,5 @@
 # Specialised methods for NSEBase.jl types are stored here.
 
-# --------------- #
-# FTField methods #
-# --------------- #
-function NSEBase.growto(u::FTField{G}, N::NTuple{3, Int}) where {S, G<:AbstractChannelGrid{S}}
-    out = FTField(growto(grid(u), N))
-    for ny in 1:S[1], nx in 0:(S[2] >> 1), nz in -(S[3] >> 1):(S[3] >> 1), nt in -(S[4] >> 1):(S[4] >> 1)
-        out[ny, ModeNumber(nx, nz, nt)] = u[ny, ModeNumber(nx, nz, nt)]
-    end
-    return out
-end
-
 
 # ------------------- #
 # VectorField methods #
