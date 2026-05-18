@@ -31,11 +31,11 @@ plane_poiseuille_base(g::AbstractChannelGrid) = @. one(eltype(g.y)) - g.y^2
 # ------------------------- #
 # flow-level constructors   #
 # ------------------------- #
-PlaneCouetteFlow(g::AbstractChannelGrid{S, T}, Re; Ro=0, base=plane_couette_base(g), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) where {S, T} =
-    _plane_channel_flow(g, Re, base, _coriolis_force(T(Ro)); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+PlaneCouetteFlow(g::AbstractChannelGrid, Re; Ro=0, base=plane_couette_base(g), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) =
+    _plane_channel_flow(g, Re, base, _coriolis_force(Ro); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
-PlanePoiseuilleFlow(g::AbstractChannelGrid{S, T}, Re; Ro=0, base=plane_poiseuille_base(g), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) where {S, T} =
-    _plane_channel_flow(g, Re, base, _coriolis_force(T(Ro)); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+PlanePoiseuilleFlow(g::AbstractChannelGrid, Re; Ro=0, base=plane_poiseuille_base(g), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) =
+    _plane_channel_flow(g, Re, base, _coriolis_force(Ro); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
 _plane_channel_flow(g::AbstractChannelGrid, Re, base, force; mode, fftw_flags, dealias) =
     NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
