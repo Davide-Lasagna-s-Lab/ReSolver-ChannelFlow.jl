@@ -53,19 +53,3 @@ function NSEBase.expand!(u::VectorField{N, <:FTField{G}},
     return u
 end
 
-# TODO: low-hanging fruit for migration to NSEBase.jl
-function save_field(a::ProjectedField{<:FTField{<:AbstractChannelGrid}}; path="./a.jld2")
-    jldopen(path, "w") do f
-        f["data"] = parent(a)
-    end
-    return nothing
-end
-
-function load_field(g::AbstractChannelGrid, modes, path)
-    # read coefficients of projected field
-    data = jldopen(path, "r") do f
-        return f["data"]
-    end
-
-    return ProjectedField(typeof(FTField(g)), data, modes)
-end

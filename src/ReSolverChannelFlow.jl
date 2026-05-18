@@ -12,8 +12,8 @@ export VectorField
 export ProjectedField, modes, project!, project, expand!, expand
 export FFT, IFFT, FFTPlans
 export dds!, ddx_x!, ddx_y!, ddx_z!, laplacian!
-export shift!, shift, normdiff
-export dot, norm, minnormdiff
+export shift!, shift, normdiff, minnormdiff
+export dot, norm
 export FarazmandWeight
 export CartesianPrimitive, CartesianPrimitiveNSE, CartesianPrimitiveLNSE, Forward, AdjointDiscrete, AdjointContinuous
 export CartesianPrimitiveRotatingNSE, CartesianPrimitiveRotatingLNSE
