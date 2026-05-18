@@ -5,7 +5,7 @@ import JLD2
 import LinearAlgebra
 import NSEBase
 
-export ChannelGrid, get_fields, save_grid, load_grid
+export ChannelGrid, get_fields
 export FarazmandWeight
 export PlaneCouetteFlow, PlanePoiseuilleFlow
 export CoriolisForce

@@ -243,34 +243,3 @@ size tuple are replaced; `S[2] = Ny` is preserved from the original grid.
 """
 NSEBase.growto(g::ChannelGrid{S}, (Nx, Nz, Nt)::NTuple{3, Int}) where {S} =
     ChannelGrid{(Nx, S[2], Nz, Nt)}(g.y, g.D₁, g.D₂, g.D₁⁺, g.D₂⁺, g.ws, g.α, g.β)
-
-
-# ----------- #
-# Persistence #
-# ----------- #
-"""
-    save_grid(g::ChannelGrid; path="./grid.jld2")
-
-Serialize `g` to a JLD2 file at `path`. The entire struct — including
-differentiation matrices, quadrature weights, and wavenumber scales — is
-stored under the key `"grid"`. Load with [`load_grid`](@ref).
-"""
-function save_grid(g::ChannelGrid; path="./grid.jld2")
-    JLD2.jldopen(path, "w") do f
-        f["grid"] = g
-    end
-    return nothing
-end
-
-"""
-    load_grid(path) -> ChannelGrid
-
-Load a `ChannelGrid` previously saved with [`save_grid`](@ref) from the JLD2
-file at `path`. The returned grid is identical to the one that was saved,
-including all differentiation matrices and quadrature weights.
-"""
-function load_grid(path)
-    JLD2.jldopen(path, "r") do f
-        return f["grid"]
-    end
-end
