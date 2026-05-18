@@ -1,8 +1,9 @@
 module ReSolverChannelFlow
 
-using FFTW, LinearAlgebra, JLD2
-
-using NSEBase
+import FFTW
+import JLD2
+import LinearAlgebra
+import NSEBase
 
 export ChannelGrid, get_fields, save_grid, load_grid
 export FarazmandWeight

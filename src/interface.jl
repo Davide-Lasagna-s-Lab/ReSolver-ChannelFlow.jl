@@ -4,17 +4,17 @@
 # ------------------- #
 # VectorField methods #
 # ------------------- #
-NSEBase.add_base!(u::VectorField{N, <:FTField{G}}, base) where {N, G<:AbstractChannelGrid} = (u[1][:, 1, 1, 1] .+= base; return u)
+NSEBase.add_base!(u::NSEBase.VectorField{N, <:NSEBase.FTField{G}}, base) where {N, G<:AbstractChannelGrid} = (u[1][:, 1, 1, 1] .+= base; return u)
 
 
 # ------------------ #
 # derivative methods #
 # ------------------ #
-NSEBase.ddx!(out::FTField{G}, u::FTField{G}, ::Val{1}; adjoint=false) where {G<:ChannelGrid} =
-    mul!(out, adjoint ? grid(u).Dya : grid(u).Dy, u)
+NSEBase.ddx!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}, ::Val{1}; adjoint=false) where {G<:ChannelGrid} =
+    LinearAlgebra.mul!(out, adjoint ? NSEBase.grid(u).Dya : NSEBase.grid(u).Dy, u)
 
-NSEBase.inhomogeneous_laplacian!(out::FTField{G}, u::FTField{G}; adjoint::Bool=false) where {G<:ChannelGrid} =
-    mul!(out, adjoint ? grid(u).Dy2a : grid(u).Dy2, u)
+NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}; adjoint::Bool=false) where {G<:ChannelGrid} =
+    LinearAlgebra.mul!(out, adjoint ? NSEBase.grid(u).Dy2a : NSEBase.grid(u).Dy2, u)
 
 
 # ---------------------- #

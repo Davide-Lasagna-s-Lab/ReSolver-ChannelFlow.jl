@@ -39,8 +39,8 @@ function ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, ::Type{T}=Float64; adjo
     ws = T.(ws)
     Dy = T.(Dy)
     Dy2 = T.(Dy2)
-    Dya  = adjoint_diff ? adjoint(Dy,  ws) : Dy
-    Dy2a = adjoint_diff ? adjoint(Dy2, ws) : Dy2
+    Dya  = adjoint_diff ? LinearAlgebra.adjoint(Dy,  ws) : Dy
+    Dy2a = adjoint_diff ? LinearAlgebra.adjoint(Dy2, ws) : Dy2
     return ChannelGrid{(length(y), Nx, Nz, Nt), T, adjoint_diff}(T.(y), Dy, Dy2, Dya, Dy2a, ws, T(α), T(β))
 end
 
@@ -51,12 +51,12 @@ function Base.convert(::Type{T}, g::ChannelGrid{S, <:Any, true}) where {T, S}
     Dy = T.(g.Dy)
     Dy2 = T.(g.Dy2)
     ws = T.(g.ws)
-    return ChannelGrid{S, T, true}(T.(g.y), Dy, Dy2, adjoint(Dy, ws), adjoint(Dy2, ws), ws, T(g.α), T(g.β))
+    return ChannelGrid{S, T, true}(T.(g.y), Dy, Dy2, LinearAlgebra.adjoint(Dy, ws), LinearAlgebra.adjoint(Dy2, ws), ws, T(g.α), T(g.β))
 end
 
 # get points from grid
 NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} =
-    points(g, (dealias ? NSEBase.get_padded_size(S, NSEBase.fft_dims(g)) : S)[2:end])
+    NSEBase.points(g, (dealias ? NSEBase.get_padded_size(S, NSEBase.fft_dims(g)) : S)[2:end])
 NSEBase.points(g::ChannelGrid, S::NTuple{3, Int}) = (reshape(g.y,                      :, 1, 1, 1),
                                                      reshape(_equal_pts(S[1], 2π/g.α), 1, :, 1, 1),
                                                      reshape(_equal_pts(S[2], 2π/g.β), 1, 1, :, 1),
@@ -81,14 +81,14 @@ get_fields(g::ChannelGrid) = (g.Dy, g.Dy2, g.Dya, g.Dy2a, g.ws, g.α, g.β)
 
 # read-write methods
 function save_grid(g::ChannelGrid; path="./grid.jld2")
-    jldopen(path, "w") do f
+    JLD2.jldopen(path, "w") do f
         f["grid"] = g
     end
     return nothing
 end
 
 function load_grid(path)
-    jldopen(path, "r") do f
+    JLD2.jldopen(path, "r") do f
         return f["grid"]
     end
 end
