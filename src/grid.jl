@@ -69,6 +69,9 @@ _equal_pts(N)    = (0:(N - 1))/(N)
 NSEBase.wavenumber_scale(g::AbstractChannelGrid{S, T}, dim::Int) where {S, T} =
     dim == 2 ? g.α : dim == 3 ? g.β : one(T)
 
+# dim 1 is the wall-normal (inhomogeneous) direction; ws holds Gauss-Lobatto weights.
+NSEBase.weights(g::AbstractChannelGrid) = g.ws
+
 # grow grid size
 NSEBase.growto(g::ChannelGrid{S, T, ADJ}, N::NTuple{3, Int}) where {S, T, ADJ} =
     ChannelGrid{(S[1], N...), T, ADJ}(g.y, get_fields(g)...)

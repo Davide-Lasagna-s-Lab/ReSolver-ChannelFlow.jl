@@ -1,21 +1,5 @@
 # Norm definitions and special scaling for channel flow fields.
 
-# ----------------------- #
-# standard inner products #
-# ----------------------- #
-# TODO: definitiely possible to do generically in NSEBase.jl with the ModeNumber view indexing and a user-defined dot on the resulting slice
-function LinearAlgebra.dot(u::FTField{G}, v::FTField{G}) where {S, T, G<:AbstractChannelGrid{S, T}}
-    sum = zero(T)
-    @loop_nznt S[4] S[3] for ny in 1:S[1]
-        @inbounds sum += grid(u).ws[ny]*real(dot(u[ny, 1, _nz, _nt], v[ny, 1, _nz, _nt]))
-    end
-    @loop_nznt S[4] S[3] for _nx in 2:(S[2] >> 1) + 1, ny in 1:S[1]
-        @inbounds sum += 2*grid(u).ws[ny]*real(dot(u[ny, _nx, _nz, _nt], v[ny, _nx, _nz, _nt]))
-    end
-    return sum/2
-end
-
-
 # ----------- #
 # other norms #
 # ----------- #
