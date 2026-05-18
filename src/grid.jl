@@ -25,7 +25,7 @@ const CHANNEL_FFT_ORDER = (2, 3, 4)
 const CHANNEL_INHOMOGENEOUS_DIMS = (1,)
 
 """
-    AbstractChannelGrid{S} <: AbstractGrid{Float64, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER}
+    AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER}
 
 Abstract supertype for all plane-channel grids using the default axis layout
 defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`.
@@ -33,10 +33,10 @@ defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`
 `S` is an `NTuple{4, Int}` giving the physical (pre-dealiasing) size in physical
 coordinate order `(Nx, Ny, Nz, Nt)`, where `Ny` is the wall-normal resolution
 and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
-resolutions. The `AbstractGrid` type parameters are fixed to `Float64` scalars
-stored in 4D arrays with the layout described above.
+resolutions. The type parameters are fixed to `Float64` scalars stored in 4D
+arrays with the layout described above.
 """
-abstract type AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid{Float64, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
+abstract type AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 # TODO: figure out why this is needed.. it seems to be needed for the MPI code, but maybe there is a better way to do this.
 # TODO: fix this to return S in the order represented by CHANNEL_AXES, i.e. (Ny, Nx, Nz, Nt) instead of (Nx, Ny, Nz, Nt)

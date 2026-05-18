@@ -1,5 +1,5 @@
 # Channel-flow body force and convenience constructors.
-#  CartesianPrimitiveNSE / CartesianPrimitiveLNSE structs live in NSEBase.
+#  CartesianPrimitive3DNSE / CartesianPrimitive3DLNSE structs live in NSEBase.
 
 # ----------------------- #
 # Coriolis body force     #
