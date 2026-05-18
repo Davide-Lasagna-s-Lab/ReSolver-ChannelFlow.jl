@@ -7,7 +7,7 @@ import NSEBase
 
 export ChannelGrid, get_fields, save_grid, load_grid
 export FarazmandWeight
-export CartesianPrimitiveRotatingNSE, CartesianPrimitiveRotatingLNSE
+export PlaneCouetteFlow, PlanePoiseuilleFlow
 export CoriolisForce
 
 # Shared field, transform, shift, norm, and equation helpers are provided by NSEBase.

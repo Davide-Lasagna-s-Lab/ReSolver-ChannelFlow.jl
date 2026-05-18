@@ -21,14 +21,23 @@ end
 end
 
 
-# ---------------------------------- #
-# rotating channel-flow constructors #
-# ---------------------------------- #
-CartesianPrimitiveRotatingNSE(g::AbstractChannelGrid{S, T}, Re; Ro=0, flags=FFTW.EXHAUSTIVE) where {S, T} =
-    NSEBase.CartesianPrimitiveNSE(g, Re; force=CoriolisForce(T(Ro)), flags=flags)
+# --------------------------------- #
+# canonical channel-flow base flows #
+# --------------------------------- #
+plane_couette_base(g::AbstractChannelGrid) = copy(g.y)
+plane_poiseuille_base(g::AbstractChannelGrid) = @. one(eltype(g.y)) - g.y^2
 
-CartesianPrimitiveRotatingLNSE(g::AbstractChannelGrid{S, T}, Re; Ro=0, mode=NSEBase.AdjointDiscrete(), flags=FFTW.EXHAUSTIVE) where {S, T} =
-    NSEBase.CartesianPrimitiveLNSE(g, Re; mode=mode, force=CoriolisForce(T(Ro)), flags=flags)
 
-ProjectedCartesianPrimitiveRotatingNSE(g::AbstractChannelGrid{S, T}, Re, base; Ro=0, mode=NSEBase.AdjointDiscrete(), flags=FFTW.EXHAUSTIVE) where {S, T} =
-    NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive(); force=CoriolisForce(T(Ro)), mode=mode, flags=flags, dealias=true)
+# ------------------------- #
+# flow-level constructors   #
+# ------------------------- #
+PlaneCouetteFlow(g::AbstractChannelGrid{S, T}, Re; Ro=0, base=plane_couette_base(g), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) where {S, T} =
+    _plane_channel_flow(g, Re, base, _coriolis_force(T(Ro)); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+
+PlanePoiseuilleFlow(g::AbstractChannelGrid{S, T}, Re; Ro=0, base=plane_poiseuille_base(g), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) where {S, T} =
+    _plane_channel_flow(g, Re, base, _coriolis_force(T(Ro)); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+
+_plane_channel_flow(g::AbstractChannelGrid, Re, base, force; mode, fftw_flags, dealias) =
+    NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
+
+_coriolis_force(Ro) = iszero(Ro) ? NSEBase.NoForce() : CoriolisForce(Ro)
