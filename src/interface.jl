@@ -20,36 +20,10 @@ NSEBase.inhomogeneous_laplacian!(out::FTField{G}, u::FTField{G}; adjoint::Bool=f
 # ---------------------- #
 # ProjectedField methods #
 # ---------------------- #
-NSEBase.no_of_modes(modes::Array{ComplexF64, 5}) = size(modes, 2)
+NSEBase.no_of_modes(modes::NTuple{3, Array{ComplexF64, 5}}) = size(modes[1], 2)
 
-@inline _channel_int(u, ws, v, N) = sum(ws[i]*dot(u[i], v[i]) for i in 1:N)
-@inline _get_mode(modes, Ny, n, m, nx, nz, nt) = @view(modes[(Ny*(n - 1) + 1):Ny*n, m, nx, nz, nt])
-
-
-# TODO: implement these generically in NSEBase.jl
-NSEBase.project!(a::ProjectedField{G},
-                 u::VectorField{N, <:FTField{G}}) where {S, T, G<:AbstractChannelGrid{S, T}, N} = _project!(a, u, S, N, T)
-function _project!(a, u, S, N, T)
-    a .= zero(T)
-    @loop_modes S[4] S[3] S[2] for m in axes(a, 1), n in 1:N
-        @views @inbounds a[m, _nx, _nz, _nt] += _channel_int(_get_mode(modes(a), S[1], n, m, _nx, _nz, _nt), grid(u).ws, u[n][:, _nx, _nz, _nt], S[1])
-    end
-    return a
-end
-
-# ! splitting the modes into three seperate objects for each velocity component is faster
-# ! allocations are somehow related to FDGrids.jl, the broadcasting is kind of broken???
-function NSEBase.expand!(u::VectorField{N, <:FTField{G}},
-                         a::ProjectedField{G}) where {N, S, T, G<:AbstractChannelGrid{S, T}}
-    u .= zero(Complex{T})
-    @inbounds begin
-        for n in 1:N
-            @loop_modes S[4] S[3] S[2] for m in axes(a, 1)
-                @view(u[n][:, _nx, _nz, _nt]) .+= a[m, _nx, _nz, _nt].*_get_mode(modes(a), S[1], n, m, _nx, _nz, _nt)
-                # @views u[n][:, _nx, _nz, _nt] .+= a[m, _nx, _nz, _nt].*mds[n][:, m, _nx, _nz, _nt]
-            end
-        end
-    end
-    return u
-end
-
+NSEBase.get_mode_coefficient(modes::NTuple{3, Array{ComplexF64, 5}}, 
+                                  ::AbstractChannelGrid, 
+                                 n::Int, 
+                                 m::Int, 
+                               inh::NTuple{1}, spectral...) = modes[n][inh[1], m, spectral...]
