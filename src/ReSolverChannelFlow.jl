@@ -4,8 +4,10 @@ import FFTW
 import JLD2
 import LinearAlgebra
 import NSEBase
+import NSEBase: points, growto
 
 export ChannelGrid, get_fields
+export points, growto
 export FarazmandWeight
 export PlaneCouetteFlow, PlanePoiseuilleFlow
 export CoriolisForce

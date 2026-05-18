@@ -30,25 +30,37 @@ const CHANNEL_INHOMOGENEOUS_DIMS = (1,)
 Abstract supertype for all plane-channel grids using the default axis layout
 defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`.
 
-`S` is an `NTuple{4, Int}` giving the physical (pre-dealiasing) size in physical
-coordinate order `(Nx, Ny, Nz, Nt)`, where `Ny` is the wall-normal resolution
-and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
-resolutions. The type parameters are fixed to `Float64` scalars stored in 4D
-arrays with the layout described above.
+`S` is an `NTuple{4, Int}` giving the physical (pre-dealiasing) size in
+physical-coordinate order `(Nx, Ny, Nz, Nt)`, where `Ny` is the wall-normal
+resolution and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
+resolutions. `Base.size(grid)` permutes `S` into array-dimension order for
+NSEBase generic code. The type parameters are fixed to `Float64` scalars stored
+in 4D arrays with the layout described above.
 """
 abstract type AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
-# TODO: figure out why this is needed.. it seems to be needed for the MPI code, but maybe there is a better way to do this.
-# TODO: fix this to return S in the order represented by CHANNEL_AXES, i.e. (Ny, Nx, Nz, Nt) instead of (Nx, Ny, Nz, Nt)
+_Nx(S::NTuple{4}) = S[1]
+_Ny(S::NTuple{4}) = S[2]
+_Nz(S::NTuple{4}) = S[3]
+_Nt(S::NTuple{4}) = S[4]
+
+_coordinate_for_array_dim(dim::Int) = findfirst(==(dim), CHANNEL_AXES)
+_array_size(S::NTuple{4}) = ntuple(dim -> S[_coordinate_for_array_dim(dim)], 4)
+
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
 
-Return the physical (pre-dealiasing) grid size `S = (Nx, Ny, Nz, Nt)` in
-physical coordinate order. `S` is encoded as a type parameter, so this method
-exposes it at runtime for NSEBase generic code. In distributed contexts a
+Return the physical (pre-dealiasing) grid size in array-dimension order. The
+type parameter `S = (Nx, Ny, Nz, Nt)` is stored in physical-coordinate order,
+so this method permutes it according to `CHANNEL_AXES` and returns
+`(Ny, Nx, Nz, Nt)` for the default layout. In distributed contexts a
 concrete subtype may override this to return slab-local sizes instead.
 """
-Base.size(::AbstractChannelGrid{S}) where {S} = S
+Base.size(::AbstractChannelGrid{S}) where {S} = _array_size(S)
+
+# NSEBase.similar(field, Float64) asks grids to convert to the same scalar
+# type; channel grids are already Float64-valued, so this is an identity.
+Base.convert(::Type{Float64}, g::AbstractChannelGrid) = g
 
 
 # ----------------------------- #
@@ -60,7 +72,7 @@ Base.size(::AbstractChannelGrid{S}) where {S} = S
 Concrete plane-channel grid with one inhomogeneous wall-normal direction and
 three homogeneous directions `(x, z, t)`.
 
-The size parameter `S = (Nx, Ny, Nz, Nt)` follows physical coordinate order.
+The size parameter `S = (Nx, Ny, Nz, Nt)` follows physical-coordinate order.
 
 # Fields
 - `y`: wall-normal collocation points.
@@ -132,15 +144,17 @@ function ChannelGrid(  y::AbstractVector,
     return ChannelGrid{(Nx, length(y), Nz, Nt)}(y, D₁, D₂, D₁⁺, D₂⁺, ws, α, β)
 end
 
+# TODO: reintroduce the convert methods 
 
 # ------------------- #
 # NSEBase grid hooks  #
 # ------------------- #
 """
-    points(g::ChannelGrid{S}; dealias=false) -> (x, y, z, t)
+    points(g::ChannelGrid{S}; dealias=false) -> (y, x, z, t)
 
-Return broadcastable coordinate arrays `(x, y, z, t)` at the physical-space
-grid points, each shaped to broadcast along its correct array dimension.
+Return broadcastable coordinate arrays `(y, x, z, t)` at the physical-space
+grid points, in array-dimension order, each shaped to broadcast along its
+correct array dimension.
 
 When `dealias=false` (default), the homogeneous directions use the
 pre-dealiasing physical resolution stored in `S = (Nx, Ny, Nz, Nt)`.
@@ -152,22 +166,18 @@ explicit homogeneous size tuple.
 """
 NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} = begin
     if dealias
-        # Convert S from physical coord order (Nx, Ny, Nz, Nt) to array dim order
-        # (Ny, Nx, Nz, Nt) so that get_padded_size can use CHANNEL_FFT_ORDER indices.
-        Nx, Ny, Nz, Nt = S
-        _, Nx′, Nz′, Nt′ = NSEBase.get_padded_size((Ny, Nx, Nz, Nt), NSEBase.fft_dims(g))
+        _, Nx′, Nz′, Nt′ = NSEBase.get_padded_size(size(g), NSEBase.fft_dims(g))
         NSEBase.points(g, (Nx′, Nz′, Nt′))
     else
-        Nx, _, Nz, Nt = S
-        NSEBase.points(g, (Nx, Nz, Nt))
+        NSEBase.points(g, (_Nx(S), _Nz(S), _Nt(S)))
     end
 end
 
 """
-    points(g::ChannelGrid, N::NTuple{3, Int}) -> (x, y, z, t)
+    points(g::ChannelGrid, N::NTuple{3, Int}) -> (y, x, z, t)
 
-Return broadcastable coordinate arrays `(x, y, z, t)` in physical coordinate
-order for a channel grid with homogeneous sizes `N = (Nx, Nz, Nt)`.
+Return broadcastable coordinate arrays `(y, x, z, t)` in array-dimension order
+for a channel grid with homogeneous sizes `N = (Nx, Nz, Nt)`.
 
 Each array is reshaped so that it varies along the correct array dimension as
 defined by `CHANNEL_AXES`:
@@ -187,8 +197,8 @@ function NSEBase.points(g::ChannelGrid, (Nx, Nz, Nt)::NTuple{3, Int})
     X = reshape(_equal_pts(Nx, 2π/g.α), _shape(1, Nx))
     Y = reshape(g.y,                    _shape(2, length(g.y)))
     Z = reshape(_equal_pts(Nz, 2π/g.β), _shape(3, Nz))
-    T = reshape(_equal_pts(Nt),          _shape(4, Nt))
-    return (X, Y, Z, T)
+    T = reshape(_equal_pts(Nt),         _shape(4, Nt))
+    return (Y, X, Z, T)
 end
 
 _equal_pts(N, L) = (0:(N - 1))/(N)*L
@@ -200,7 +210,7 @@ _equal_pts(N)    = (0:(N - 1))/(N)
 Return the wavenumber scale for physical dimension `dim`, used to convert
 integer wavenumber indices to physical wavenumbers `k = n * wavenumber_scale`.
 
-`dim` follows the physical coordinate indexing defined by `CHANNEL_AXES`:
+`dim` is an array dimension. The coordinate mapping is defined by `CHANNEL_AXES`:
 - `dim = CHANNEL_AXES[1]` (streamwise `x`): returns `g.α = 2π/Lx`.
 - `dim = CHANNEL_AXES[2]` (wall-normal `y`): returns `1.0` (inhomogeneous;
   this value should never be used in practice).
@@ -238,8 +248,9 @@ wavenumber scales (`α`, `β`) unchanged.
 
 This is used by NSEBase when changing spectral resolution, for example when
 doubling the grid for dealiasing (3/2 rule) or when constructing a coarser
-grid for a continuation study. Only `S[1]`, `S[3]`, and `S[4]` in the new
-size tuple are replaced; `S[2] = Ny` is preserved from the original grid.
+grid for a continuation study. Only the homogeneous entries `S[1]`, `S[3]`,
+and `S[4]` in the new physical-coordinate size tuple are replaced; `S[2] = Ny`
+is preserved from the original grid.
 """
 NSEBase.growto(g::ChannelGrid{S}, (Nx, Nz, Nt)::NTuple{3, Int}) where {S} =
-    ChannelGrid{(Nx, S[2], Nz, Nt)}(g.y, g.D₁, g.D₂, g.D₁⁺, g.D₂⁺, g.ws, g.α, g.β)
+    ChannelGrid{(Nx, _Ny(S), Nz, Nt)}(g.y, g.D₁, g.D₂, g.D₁⁺, g.D₂⁺, g.ws, g.α, g.β)

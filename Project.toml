@@ -10,7 +10,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NSEBase = "9778a910-ce4d-423e-92be-12991f0cf10c"
 
 [sources]
-NSEBase = {path = "/home/tpb1y19/Code/NSEBase.jl/"}
+NSEBase = {path = "/Users/dl1f12/Documents/GitHub/NSEBase.jl"}
 
 [compat]
 JLD2 = "0.6.3"
