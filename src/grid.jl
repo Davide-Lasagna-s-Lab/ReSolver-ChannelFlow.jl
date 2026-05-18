@@ -36,9 +36,10 @@ and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
 resolutions. The `AbstractGrid` type parameters are fixed to `Float64` scalars
 stored in 4D arrays with the layout described above.
 """
-abstract type AbstractChannelGrid{S} <: NSEBase.AbstractGrid{Float64, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
+abstract type AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid{Float64, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 # TODO: figure out why this is needed.. it seems to be needed for the MPI code, but maybe there is a better way to do this.
+# TODO: fix this to return S in the order represented by CHANNEL_AXES, i.e. (Ny, Nx, Nz, Nt) instead of (Nx, Ny, Nz, Nt)
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
 
