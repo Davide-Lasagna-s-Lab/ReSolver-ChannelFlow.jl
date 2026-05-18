@@ -7,7 +7,7 @@
 """
     CoriolisForce{T}
 
-Body force implementing solid-body rotation at inverse Rossby number `Ro`,
+Body force implementing solid-body rotation at rotation number `Ro`,
 i.e. the Coriolis term `Ro (ẑ × u)` added to the streamwise–wall-normal
 momentum equations.
 
@@ -65,7 +65,7 @@ Construct a [`ProjectedNSE`](@ref) for plane-Couette flow at Reynolds number
 `Re` on the channel grid `g`.
 
 # Keyword arguments
-- `Ro`: inverse Rossby number. When non-zero a [`CoriolisForce`](@ref) is added.
+- `Ro`: inverse Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
 - `base`: laminar base flow as a 3-tuple `(U, V, W)` with one entry per velocity
   component; use `nothing` for components with no base flow.  Defaults to the
   Couette profile `U(y) = y` in the streamwise slot.
@@ -86,7 +86,7 @@ Construct a [`ProjectedNSE`](@ref) for plane-Poiseuille flow at Reynolds number
 `Re` on the channel grid `g`.
 
 # Keyword arguments
-- `Ro`: inverse Rossby number. When non-zero a [`CoriolisForce`](@ref) is added.
+- `Ro`: inverse Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
 - `base`: laminar base flow as a 3-tuple `(U, V, W)` with one entry per velocity
   component; use `nothing` for components with no base flow.  Defaults to the
   Poiseuille profile `U(y) = 1 - y²` in the streamwise slot.

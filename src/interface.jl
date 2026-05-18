@@ -3,12 +3,10 @@
 # ------------------ #
 # derivative methods #
 # ------------------ #
-# TODO: understand the consequences of using AbstractChannelGrid instead of ChannelGrid here.. the issue could be how this works
-# for the MPI code, perhaps we do not need to do anything special for the MPI code, because the mul! code will just work
-NSEBase.ddx!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}, ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]}; adjoint=false) where {G<:ChannelGrid} =
+NSEBase.ddx!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}, ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]}; adjoint=false) where {G<:AbstractChannelGrid} =
     LinearAlgebra.mul!(out, adjoint ? NSEBase.grid(u).D₁⁺ : NSEBase.grid(u).D₁, u)
 
-NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}; adjoint::Bool=false) where {G<:ChannelGrid} =
+NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}; adjoint::Bool=false) where {G<:AbstractChannelGrid} =
     LinearAlgebra.mul!(out, adjoint ? NSEBase.grid(u).D₂⁺ : NSEBase.grid(u).D₂, u)
 
 
