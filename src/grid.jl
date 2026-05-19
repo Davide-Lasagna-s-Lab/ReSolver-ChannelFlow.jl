@@ -25,7 +25,7 @@ const CHANNEL_FFT_ORDER = (2, 3, 4)
 const CHANNEL_INHOMOGENEOUS_DIMS = (1,)
 
 """
-    AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER}
+    AbstractChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER}
 
 Abstract supertype for all plane-channel grids using the default axis layout
 defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`.
@@ -36,7 +36,7 @@ resolution and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
 resolutions. `Base.size(grid)` permutes `S` into array-dimension order for
 NSEBase generic code.
 """
-abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractCartesianGrid3D{T, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
+abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
