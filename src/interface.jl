@@ -16,8 +16,9 @@ NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G};
 # TODO: this I do not understand... 
 NSEBase.no_of_modes(modes::NTuple{3, Array{ComplexF64, 5}}) = size(modes[1], 2)
 
-NSEBase.get_mode_coefficient(modes::NTuple{3, Array{ComplexF64, 5}}, 
-                                  ::AbstractChannelGrid, 
-                                 n::Int, 
-                                 m::Int, 
-                               inh::NTuple{1}, spectral...) = modes[n][inh[1], m, spectral...]
+NSEBase.get_mode_coefficient(modes::NTuple{3, Array{ComplexF64, 5}},
+                                          ::AbstractChannelGrid,
+                                         n::Int,
+                                         m::Int,
+                     inhomogeneous_indices::NTuple{1}, homogeneous_indices...) = 
+    modes[n][inhomogeneous_indices[1], m, homogeneous_indices...]
