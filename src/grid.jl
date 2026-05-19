@@ -34,7 +34,8 @@ defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`
 physical-coordinate order `(Nx, Ny, Nz, Nt)`, where `Ny` is the wall-normal
 resolution and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
 resolutions. `Base.size(grid)` permutes `S` into array-dimension order for
-NSEBase generic code.
+NSEBase generic code. `T` is the scalar real type used by all field arrays
+(`y`, `ws`, `α`, `β`, and all derivative matrices).
 """
 abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
@@ -53,46 +54,69 @@ Base.size(g::AbstractChannelGrid{S}) where {S} = NSEBase.storage_order(S, g)
 # Concrete grid implementation  #
 # ----------------------------- #
 """
-    ChannelGrid{S}
+    ChannelGrid{S, T, ADJ}
 
 Concrete plane-channel grid with one inhomogeneous wall-normal direction and
 three homogeneous directions `(x, z, t)`.
 
 The size parameter `S = (Nx, Ny, Nz, Nt)` follows physical-coordinate order.
+`T` is the scalar real type for all arrays. `ADJ` is a `Bool` type parameter:
+`true` when `D₁⁺` and `D₂⁺` are proper discrete-adjoint matrices; `false`
+when they alias the forward matrices.
 
 # Fields
 - `y`: wall-normal collocation points.
 - `D₁`, `D₂`: first- and second-order wall-normal derivative matrices.
-- `D₁⁺`, `D₂⁺`: discrete adjoints of `D₁` and `D₂` with respect to `ws`.
+- `D₁⁺`, `D₂⁺`: discrete adjoints of `D₁` and `D₂` with respect to `ws`
+  (or aliases of `D₁`, `D₂` when `ADJ=false`).
 - `ws`: wall-normal quadrature weights.
 - `α`: streamwise wavenumber scale `2π/Lx`.
 - `β`: spanwise wavenumber scale `2π/Lz`.
 """
-struct ChannelGrid{S, T, D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T}, D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}, W} <: AbstractChannelGrid{S}
+struct ChannelGrid{S, T, ADJ, D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T}, D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}} <: AbstractChannelGrid{S, T}
     y  :: Vector{T}
     D₁ :: D1
     D₂ :: D2
     D₁⁺:: D3
     D₂⁺:: D4
     ws :: Vector{T}
-    α  :: Float64
-    β  :: Float64
+    α  :: T
+    β  :: T
 
-    function ChannelGrid{S}(   y::AbstractVector,
-                              D₁::AbstractMatrix,
-                              D₂::AbstractMatrix,
-                              D₁⁺::AbstractMatrix,
-                              D₂⁺::AbstractMatrix,
-                              ws::AbstractVector,
-                               α::Real,
-                               β::Real) where {S}
+    ChannelGrid{S, T, ADJ}(  y::Vector{T},
+                            D₁::D1,
+                            D₂::D2,
+                           D₁⁺::D3,
+                           D₂⁺::D4,
+                            ws::Vector{T},
+                             α::T,
+                             β::T) where {S, T, ADJ,
+                                         D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T},
+                                         D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}} = begin
         Nx, Ny, Nz, Nt = S
         (isodd(Nx) && isodd(Nz) && isodd(Nt)) || throw(ArgumentError("grid must be odd in streamwise, spanwise, and time directions"))
         length(y) == length(ws) == Ny || throw(ArgumentError("quadrature weights and collocation points have incompatible sizes"))
         size(D₁) == size(D₂) == size(D₁⁺) == size(D₂⁺) == (Ny, Ny) || throw(ArgumentError("differentiation matrices have incompatible sizes"))
-        return new{S, typeof(y), typeof(D₁), typeof(D₂), typeof(D₁⁺), typeof(D₂⁺), typeof(ws)}(
-            y, D₁, D₂, D₁⁺, D₂⁺, ws, Float64(α), Float64(β))
+        return new{S, T, ADJ, D1, D2, D3, D4}(y, D₁, D₂, D₁⁺, D₂⁺, ws, α, β)
     end
+end
+
+"""
+    convert(T, g::ChannelGrid) -> ChannelGrid
+
+Return a copy of `g` with all arrays converted to scalar type `T`. If `g`
+already has eltype `T` the original object is returned unchanged.
+
+When `ADJ=true` the discrete-adjoint matrices are recomputed from the converted
+`D₁`, `D₂`, and `ws` so that the adjoint relationship is exact in the new type.
+When `ADJ=false` the adjoint matrices alias the forward matrices as before.
+"""
+Base.convert(::Type{T}, g::ChannelGrid{S, T}) where {S, T} = g
+Base.convert(::Type{T}, g::ChannelGrid{S, <:Any, false}) where {T, S} =
+    ChannelGrid{S, T, false}(Vector{T}(g.y), T.(g.D₁), T.(g.D₂), T.(g.D₁⁺), T.(g.D₂⁺), Vector{T}(g.ws), T(g.α), T(g.β))
+function Base.convert(::Type{T}, g::ChannelGrid{S, <:Any, true}) where {T, S}
+    D₁ = T.(g.D₁); D₂ = T.(g.D₂); ws = Vector{T}(g.ws)
+    return ChannelGrid{S, T, true}(Vector{T}(g.y), D₁, D₂, LinearAlgebra.adjoint(D₁, ws), LinearAlgebra.adjoint(D₂, ws), ws, T(g.α), T(g.β))
 end
 
 
@@ -100,7 +124,7 @@ end
 # Constructors #
 # ------------ #
 """
-    ChannelGrid(y, Nx, Nz, Nt, α, β, D₁, D₂, ws; adjoint_diff=true) -> ChannelGrid
+    ChannelGrid(y, Nx, Nz, Nt, α, β, D₁, D₂, ws, T=Float64; adjoint_diff=true) -> ChannelGrid
 
 Construct a `ChannelGrid` from wall-normal data and homogeneous grid parameters.
 
@@ -111,6 +135,8 @@ Construct a `ChannelGrid` from wall-normal data and homogeneous grid parameters.
 - `α, β`: wavenumber scales `2π/Lx` and `2π/Lz`.
 - `D₁, D₂`: `Ny × Ny` first- and second-order wall-normal differentiation matrices.
 - `ws`: `Ny` quadrature weights.
+- `T`: scalar real type for all arrays. Defaults to `Float64`. All inputs are
+  converted to `T` before storage.
 - `adjoint_diff`: when `true` (default), compute and store discrete adjoint matrices
   `D₁⁺ = adjoint(D₁, ws)` and `D₂⁺ = adjoint(D₂, ws)`. When `false`,
   `D₁⁺` and `D₂⁺` alias the forward matrices.
@@ -123,11 +149,15 @@ function ChannelGrid(  y::AbstractVector,
                        β::Real,
                       D₁::AbstractMatrix,
                       D₂::AbstractMatrix,
-                      ws::AbstractVector;
-            adjoint_diff::Bool=true)
+                      ws::AbstractVector,
+                        ::Type{T}=Float64;
+            adjoint_diff::Bool=true) where {T}
+    Ny  = length(y)
+    y   = Vector{T}(y);  ws  = Vector{T}(ws)
+    D₁  = T.(D₁);        D₂  = T.(D₂)
     D₁⁺ = adjoint_diff ? LinearAlgebra.adjoint(D₁, ws) : D₁
     D₂⁺ = adjoint_diff ? LinearAlgebra.adjoint(D₂, ws) : D₂
-    return ChannelGrid{(Nx, length(y), Nz, Nt)}(y, D₁, D₂, D₁⁺, D₂⁺, ws, α, β)
+    return ChannelGrid{(Nx, Ny, Nz, Nt), T, adjoint_diff}(y, D₁, D₂, D₁⁺, D₂⁺, ws, T(α), T(β))
 end
 
 # ------------------- #
@@ -254,5 +284,5 @@ grid for a continuation study. Only the homogeneous entries `S[1]`, `S[3]`,
 and `S[4]` in the new physical-coordinate size tuple are replaced; `S[2] = Ny`
 is preserved from the original grid.
 """
-NSEBase.growto(g::ChannelGrid{S}, (Nx, Nz, Nt)::NTuple{3, Int}) where {S} =
-    ChannelGrid{(Nx, S[2], Nz, Nt)}(g.y, g.D₁, g.D₂, g.D₁⁺, g.D₂⁺, g.ws, g.α, g.β)
+NSEBase.growto(g::ChannelGrid{S, T, ADJ}, (Nx, Nz, Nt)::NTuple{3, Int}) where {S, T, ADJ} =
+    ChannelGrid{(Nx, S[2], Nz, Nt), T, ADJ}(g.y, g.D₁, g.D₂, g.D₁⁺, g.D₂⁺, g.ws, g.α, g.β)
