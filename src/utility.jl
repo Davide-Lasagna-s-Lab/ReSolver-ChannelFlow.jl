@@ -1,5 +1,7 @@
 # Utility macros for easy looping
 
+# TODO: chuck this
+
 macro loop_modes(Nt, Nz, Nx, expr)
     quote
         for $(esc(:_nt)) in 1:($(esc(Nt)) >> 1) + 1

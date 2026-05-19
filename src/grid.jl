@@ -36,7 +36,7 @@ resolution and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
 resolutions. `Base.size(grid)` permutes `S` into array-dimension order for
 NSEBase generic code.
 """
-abstract type AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
+abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractCartesianGrid3D{T, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
@@ -68,17 +68,17 @@ The size parameter `S = (Nx, Ny, Nz, Nt)` follows physical-coordinate order.
 - `α`: streamwise wavenumber scale `2π/Lx`.
 - `β`: spanwise wavenumber scale `2π/Lz`.
 """
-struct ChannelGrid{S, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S}
-    y  :: Y
+struct ChannelGrid{S, T, D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T}, D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}, W} <: AbstractChannelGrid{S}
+    y  :: Vector{T}
     D₁ :: D1
     D₂ :: D2
     D₁⁺:: D3
     D₂⁺:: D4
-    ws :: W
+    ws :: Vector{T}
     α  :: Float64
     β  :: Float64
 
-    function ChannelGrid{S}(  y::AbstractVector,
+    function ChannelGrid{S}(   y::AbstractVector,
                               D₁::AbstractMatrix,
                               D₂::AbstractMatrix,
                               D₁⁺::AbstractMatrix,

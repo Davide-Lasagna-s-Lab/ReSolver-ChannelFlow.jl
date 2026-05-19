@@ -28,14 +28,15 @@
 
     # test time derivative of projected field
     M = 10
-    Ψ = zeros(ComplexF64, Ny, M, (Nx >> 1) + 1, Nz, Nt)
+    Ψ₁ = zeros(ComplexF64, Ny, M, (Nx >> 1) + 1, Nz, Nt)
     for nt in 1:Nt, nz in 1:Nz, nx in 1:(Nx >> 1) + 1
-        Ψ[:, :, nx, nz, nt] .= qr(randn(ComplexF64, Ny, M)).Q[:, 1:M]
+        Ψ₁[:, :, nx, nz, nt] .= qr(randn(ComplexF64, Ny, M)).Q[:, 1:M]
     end
     for m in 1:M
-        NSEBase.apply_symmetry!(@view(Ψ[:, m, :, :, :]), (2, 3, 4))
-        Ψ[:, m, 1, 1, 1] .= real.(Ψ[:, m, 1, 1, 1])
+        NSEBase.apply_symmetry!(@view(Ψ₁[:, m, :, :, :]), (2, 3, 4))
+        Ψ₁[:, m, 1, 1, 1] .= real.(Ψ₁[:, m, 1, 1, 1])
     end
+    Ψ = (Ψ₁, zero(Ψ₁), zero(Ψ₁))
     a = project(FFT(VectorField(g, u_fun)), Ψ)
     @test NSEBase.dds!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
 

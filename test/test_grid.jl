@@ -14,6 +14,7 @@
     # test isa
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
     @test g isa ChannelGrid{(Nx, Ny, Nz, Nt)}
+    @test size(g) == (Ny, Nx, Nz, Nt)
 
     # test point generation; points returns (y, x, z, t) in array-dimension order
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
@@ -29,7 +30,11 @@
     @test pts[2][:]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α  # x coordinate
     @test pts[3][:]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β  # z coordinate
     @test pts[4][:]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)    # t coordinate
-    @test points(g, dealias=true) == points(g, NSEBase.get_padded_size(size(g), NSEBase.fft_dims(g))[2:4])
+    padded_storage_size = NSEBase.get_padded_size(size(g), NSEBase.fft_dims(g))
+    padded_homogeneous_size = (padded_storage_size[ReSolverChannelFlow.CHANNEL_AXES[1]],
+                               padded_storage_size[ReSolverChannelFlow.CHANNEL_AXES[3]],
+                               padded_storage_size[ReSolverChannelFlow.CHANNEL_AXES[4]])
+    @test points(g, dealias=true) == points(g, padded_homogeneous_size)
 
     # test growto
     g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
@@ -37,6 +42,8 @@
     Nz_new = rand(Nz+2:2:81)
     Nt_new = rand(Nt+2:2:81)
     g_new = growto(g, (Nx_new, Nz_new, Nt_new))
+    @test g_new isa ChannelGrid{(Nx_new, Ny, Nz_new, Nt_new)}
+    @test size(g_new) == (Ny, Nx_new, Nz_new, Nt_new)
     pts = points(g)
     pts_new = points(g_new)
     @test pts_new[1]    == pts[1]                                       # y unchanged after growto

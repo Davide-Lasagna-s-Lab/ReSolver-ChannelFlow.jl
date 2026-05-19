@@ -1,5 +1,7 @@
 # Norm weight applied to the dot product of projected fields
 
+
+# TODO: move to NSEbase
 # TODO: constructor with grid
 struct FarazmandWeight{T<:Real}
     ω::T
