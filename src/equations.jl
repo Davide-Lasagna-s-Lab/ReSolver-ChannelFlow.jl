@@ -34,6 +34,37 @@ end
 end
 
 
+# ------------------------------------ #
+# constant mean pressure-gradient force #
+# ------------------------------------ #
+"""
+    ConstantForcing(value=1)
+
+A body force representing a spatially uniform mean pressure gradient, acting on
+the zero-wavenumber (mean) mode of the first (streamwise) velocity component at
+every wall-normal grid point.
+
+`value` is the forcing amplitude. For Poiseuille flow non-dimensionalised with
+the friction velocity `uτ` and half-channel height `h` (so that `Re = Re_τ =
+uτ h / ν`), the conventional value is `1` (the default).
+
+The force is applied identically in every equation mode (nonlinear, forward
+linearised, and adjoint linearised).
+"""
+struct ConstantForcing{T}
+    value::T
+end
+ConstantForcing() = ConstantForcing(1.0)
+
+function (f::ConstantForcing)(out::NSEBase.VectorField{N, <:NSEBase.FTField{<:AbstractChannelGrid}},
+                              _,
+                              ::NSEBase.Mode) where {N}
+    parent(out[1])[:, 1, 1, 1] .+= f.value
+    return out
+end
+
+
+
 # --------------------------------- #
 # canonical channel-flow base flows #
 # --------------------------------- #
@@ -79,7 +110,7 @@ PlaneCouetteFlow(g::AbstractChannelGrid, Re; Ro=0, base=(plane_couette_base(g), 
     _plane_channel_flow(g, Re, base, _coriolis_force(Ro); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
 """
-    PlanePoiseuilleFlow(g, Re; Ro=0, base=(plane_poiseuille_base(g), nothing, nothing),
+    PlanePoiseuilleFlow(g, Re; Ro=0, f=1, base=(plane_poiseuille_base(g), nothing, nothing),
                         mode=AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true)
 
 Construct a [`ProjectedNSE`](@ref) for plane-Poiseuille flow at Reynolds number
@@ -87,6 +118,8 @@ Construct a [`ProjectedNSE`](@ref) for plane-Poiseuille flow at Reynolds number
 
 # Keyword arguments
 - `Ro`: inverse Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
+- `f`: amplitude of the mean pressure-gradient body force ([`ConstantForcing`](@ref)).
+  Defaults to `1`, the conventional value when `Re = Re_τ` (friction Reynolds number).
 - `base`: laminar base flow as a 3-tuple `(U, V, W)` with one entry per velocity
   component; use `nothing` for components with no base flow.  Defaults to the
   Poiseuille profile `U(y) = 1 - y²` in the streamwise slot.
@@ -96,10 +129,11 @@ Construct a [`ProjectedNSE`](@ref) for plane-Poiseuille flow at Reynolds number
 - `dealias`: allocate physical-space caches on the dealiased grid. Defaults to
   `true`.
 """
-PlanePoiseuilleFlow(g::AbstractChannelGrid, Re; Ro=0, base=(plane_poiseuille_base(g), nothing, nothing), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) =
-    _plane_channel_flow(g, Re, base, _coriolis_force(Ro); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+PlanePoiseuilleFlow(g::AbstractChannelGrid, Re; Ro=0, f=1, base=(plane_poiseuille_base(g), nothing, nothing), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) =
+    _plane_channel_flow(g, Re, base, _poiseuille_force(Ro, f); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
 _plane_channel_flow(g::AbstractChannelGrid, Re, base, force; mode, fftw_flags, dealias) =
     NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
 
 _coriolis_force(Ro) = iszero(Ro) ? NSEBase.NoForce() : CoriolisForce(Ro)
+_poiseuille_force(Ro, f) = iszero(Ro) ? ConstantForcing(f) : CompoundForcing(ConstantForcing(f), CoriolisForce(Ro))

@@ -10,7 +10,7 @@ export ChannelGrid, get_fields
 export points, growto
 export FarazmandWeight
 export PlaneCouetteFlow, PlanePoiseuilleFlow
-export CoriolisForce
+export CoriolisForce, ConstantForcing
 
 # Shared field, transform, shift, norm, and equation helpers are provided by NSEBase.
 # TODO: add discrete channel symmetries:
