@@ -8,7 +8,6 @@ import NSEBase: points, growto
 
 export ChannelGrid, get_fields
 export points, growto
-export FarazmandWeight
 export PlaneCouetteFlow, PlanePoiseuilleFlow
 export CoriolisForce, ConstantForcing
 
@@ -20,9 +19,7 @@ export CoriolisForce, ConstantForcing
 # in plane Couette flow", section 2.2.
 
 include("grid.jl")
-include("utility.jl")
 include("interface.jl")
-include("weighting.jl")
 include("equations.jl")
 
 end

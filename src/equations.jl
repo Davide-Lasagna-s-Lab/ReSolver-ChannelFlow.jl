@@ -136,4 +136,4 @@ _plane_channel_flow(g::AbstractChannelGrid, Re, base, force; mode, fftw_flags, d
     NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
 
 _coriolis_force(Ro) = iszero(Ro) ? NSEBase.NoForce() : CoriolisForce(Ro)
-_poiseuille_force(Ro, f) = iszero(Ro) ? ConstantForcing(f) : CompoundForcing(ConstantForcing(f), CoriolisForce(Ro))
+_poiseuille_force(Ro, f) = iszero(Ro) ? ConstantForcing(f) : NSEBase.CompoundForcing(ConstantForcing(f), CoriolisForce(Ro))
