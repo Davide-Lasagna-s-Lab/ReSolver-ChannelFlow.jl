@@ -25,7 +25,7 @@ const CHANNEL_FFT_ORDER = (2, 3, 4)
 const CHANNEL_INHOMOGENEOUS_DIMS = (1,)
 
 """
-    AbstractChannelGrid{S, T} <: NSEBase.AbstractCartesianGrid3D{T, CHANNEL_AXES, CHANNEL_FFT_ORDER}
+    AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER}
 
 Abstract supertype for all plane-channel grids using the default axis layout
 defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`.
@@ -34,9 +34,9 @@ defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`
 physical-coordinate order `(Nx, Ny, Nz, Nt)`, where `Ny` is the wall-normal
 resolution and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
 resolutions. `Base.size(grid)` permutes `S` into array-dimension order for
-NSEBase generic code. `T` is the scalar real type used by physical-space fields.
+NSEBase generic code.
 """
-abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractCartesianGrid3D{T, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
+abstract type AbstractChannelGrid{S} <: NSEBase.AbstractCartesianGrid3D{Float64, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
@@ -48,12 +48,6 @@ so this method permutes it according to `CHANNEL_AXES` and returns
 concrete subtype may override this to return slab-local sizes instead.
 """
 Base.size(g::AbstractChannelGrid{S}) where {S} = NSEBase.storage_order(S, g)
-
-# NSEBase.similar(field, T) asks grids to convert to the requested scalar type.
-# The same-type case is an identity; cross-type conversion can be added later if
-# channel grids need to support changing precision.
-Base.convert(::Type{T}, g::AbstractChannelGrid{<:Any, T}) where {T} = g
-
 
 # ----------------------------- #
 # Concrete grid implementation  #
@@ -74,15 +68,15 @@ The size parameter `S = (Nx, Ny, Nz, Nt)` follows physical-coordinate order.
 - `α`: streamwise wavenumber scale `2π/Lx`.
 - `β`: spanwise wavenumber scale `2π/Lz`.
 """
-struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S, T}
+struct ChannelGrid{S, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S}
     y  :: Y
     D₁ :: D1
     D₂ :: D2
     D₁⁺:: D3
     D₂⁺:: D4
     ws :: W
-    α  :: T
-    β  :: T
+    α  :: Float64
+    β  :: Float64
 
     function ChannelGrid{S}(  y::AbstractVector,
                               D₁::AbstractMatrix,
@@ -96,9 +90,8 @@ struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S, T}
         (isodd(Nx) && isodd(Nz) && isodd(Nt)) || throw(ArgumentError("grid must be odd in streamwise, spanwise, and time directions"))
         length(y) == length(ws) == Ny || throw(ArgumentError("quadrature weights and collocation points have incompatible sizes"))
         size(D₁) == size(D₂) == size(D₁⁺) == size(D₂⁺) == (Ny, Ny) || throw(ArgumentError("differentiation matrices have incompatible sizes"))
-        T = float(promote_type(eltype(y), typeof(α), typeof(β)))
-        return new{S, T, typeof(y), typeof(D₁), typeof(D₂), typeof(D₁⁺), typeof(D₂⁺), typeof(ws)}(
-            y, D₁, D₂, D₁⁺, D₂⁺, ws, T(α), T(β))
+        return new{S, typeof(y), typeof(D₁), typeof(D₂), typeof(D₁⁺), typeof(D₂⁺), typeof(ws)}(
+            y, D₁, D₂, D₁⁺, D₂⁺, ws, Float64(α), Float64(β))
     end
 end
 
