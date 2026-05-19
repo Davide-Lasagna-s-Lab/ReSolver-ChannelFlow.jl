@@ -48,7 +48,7 @@ so this method permutes it according to `CHANNEL_AXES` and returns
 `(Ny, Nx, Nz, Nt)` for the default layout. In distributed contexts a
 concrete subtype may override this to return slab-local sizes instead.
 """
-Base.size(g::AbstractChannelGrid{S}) where {S} = NSEBase.storage_order(S, g)
+Base.size(g::AbstractChannelGrid{S}) where {S} = NSEBase.to_storage_order(S, g)
 
 # ----------------------------- #
 # Concrete grid implementation  #
@@ -220,7 +220,7 @@ function NSEBase.points(g::ChannelGrid, (Nx, Nz, Nt)::NTuple{3, Int})
     T = reshape(_equal_points(Nt, 1.0),    _reshape_dims(CHANNEL_AXES[4], Nt))
     # Return coordinates in storage order, using CHANNEL_AXES to permute the
     # logical coordinate tuple (X, Y, Z, T).
-    return NSEBase.storage_order((X, Y, Z, T), g)
+    return NSEBase.to_storage_order((X, Y, Z, T), g)
 end
 
 """
