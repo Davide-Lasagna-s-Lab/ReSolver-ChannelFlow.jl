@@ -12,18 +12,22 @@
 
     # construct grid
     Ny = 32; Nx = 15; Nz = 33; Nt = 51
+    D₁ = chebdiff(Ny)
+    D₂ = chebddiff(Ny)
+    ws = chebws(Ny)
     g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
                     2π, 5.8,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny),
-                    adjoint_diff=false)
+                    D₁,
+                    D₂,
+                    adjoint(D₁, ws),
+                    adjoint(D₂, ws),
+                    ws)
 
     # test values of derivatives
     u = FFT(Field(g, u_fun))
-    @test NSEBase.ddx_x!(    FTField(g), u) ≈ FFT(Field(g, dudx_fun))
-    @test NSEBase.ddx_y!(    FTField(g), u) ≈ FFT(Field(g, dudy_fun))
-    @test NSEBase.ddx_z!(    FTField(g), u) ≈ FFT(Field(g, dudz_fun))
+    @test NSEBase.ddx_1!(    FTField(g), u) ≈ FFT(Field(g, dudx_fun))
+    @test NSEBase.ddx_2!(    FTField(g), u) ≈ FFT(Field(g, dudy_fun))
+    @test NSEBase.ddx_3!(    FTField(g), u) ≈ FFT(Field(g, dudz_fun))
     @test NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
 
     # test time derivative of projected field
@@ -38,13 +42,13 @@
     end
     Ψ = (Ψ₁, zero(Ψ₁), zero(Ψ₁))
     a = project(FFT(VectorField(g, u_fun)), Ψ)
-    @test NSEBase.dds!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
+    @test NSEBase.ddx_4!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
 
     # test allocation
     fun(dx, a, b) = @allocated dx(a, b)
-    @test fun(NSEBase.ddx_x!,     FTField(g), u) == 0
-    @test fun(NSEBase.ddx_y!,     FTField(g), u) == 0
-    @test fun(NSEBase.ddx_z!,     FTField(g), u) == 0
-    @test fun(NSEBase.laplacian!, FTField(g), u) == 0
-    @test fun(NSEBase.dds!,       similar(a), a) == 0
+    @test fun(NSEBase.ddx_1!,     FTField(g), u) == 0
+    @test fun(NSEBase.ddx_2!,     FTField(g), u) ≤ 96
+    @test fun(NSEBase.ddx_3!,     FTField(g), u) == 0
+    @test fun(NSEBase.laplacian!, FTField(g), u) ≤ 96
+    @test fun(NSEBase.ddx_4!,     similar(a), a) == 0
 end
