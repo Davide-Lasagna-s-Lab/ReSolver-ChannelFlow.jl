@@ -5,12 +5,16 @@
 
     # construct grid
     Ny = 32; Nx = 5; Nz = 33; Nt = 51
+    D₁ = chebdiff(Ny)
+    D₂ = chebddiff(Ny)
+    ws = chebws(Ny)
     g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
                     1.0, 1.0,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny),
-                    adjoint_diff=false)
+                    D₁,
+                    D₂,
+                    adjoint(D₁, ws),
+                    adjoint(D₂, ws),
+                    ws)
 
     # test channel integration
     u = ComplexF64[(y^2)*cos(π*y/2) for y in g.y]
