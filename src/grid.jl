@@ -235,11 +235,10 @@ For example, `_equal_points(4, 1)` returns the points
 """
 _equal_points(N, L) = (0:(N - 1))/(N)*L
 
-#TODO: figure out if this should be array dimension or physical coordinate dimension
 """
     wavenumber_scale(g::AbstractChannelGrid, dim::Int) -> Real
 
-Return the wavenumber scale for physical dimension `dim`, used to convert
+Return the wavenumber scale for array dimension `dim`, used to convert
 integer wavenumber indices to physical wavenumbers `k = n * wavenumber_scale`.
 
 `dim` is an array dimension. The coordinate mapping is defined by `CHANNEL_AXES`:
@@ -252,8 +251,11 @@ integer wavenumber indices to physical wavenumbers `k = n * wavenumber_scale`.
 This method is called by NSEBase generic routines such as `minnormdiff` to
 compute shift step sizes in each homogeneous direction.
 """
-NSEBase.wavenumber_scale(g::AbstractChannelGrid, dim::Int) =
-    dim == CHANNEL_AXES[1] ? g.α : dim == CHANNEL_AXES[3] ? g.β : one(g.α)
+@inline function NSEBase.wavenumber_scale(g::AbstractChannelGrid{S, T}, dim::Int) where {S, T}
+    dim == 2 && return g.α
+    dim == 3 && return g.β
+    return one(T)
+end
 
 """
     weights(g::AbstractChannelGrid) -> AbstractVector
