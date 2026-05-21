@@ -12,12 +12,12 @@
     β   = π
 
     # test isa
-    g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
+    g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, Dy, Dy2, ws)
     @test g isa ChannelGrid{(Nx, Ny, Nz, Nt)}
     @test size(g) == (Ny, Nx, Nz, Nt)
 
     # test point generation; points returns (y, x, z, t) in array-dimension order
-    g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
+    g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, Dy, Dy2, ws)
     pts = points(g, dealias=false)
     @test pts[1][:] == y                                               # y collocation points
     @test pts[2][:]  ≈ range(0, 2π*(1 - 1/Nx), length=Nx)/α          # x coordinate
@@ -37,7 +37,7 @@
     @test points(g, dealias=true) == points(g, padded_homogeneous_size)
 
     # test growto
-    g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, adjoint_diff=false)
+    g = ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, Dy, Dy2, ws)
     Nx_new = rand(Nx+2:2:81)
     Nz_new = rand(Nz+2:2:81)
     Nt_new = rand(Nt+2:2:81)
