@@ -47,8 +47,8 @@
     # test allocation
     fun(dx, a, b) = @allocated dx(a, b)
     @test fun(NSEBase.ddx_1!,     FTField(g), u) == 0
-    @test fun(NSEBase.ddx_2!,     FTField(g), u) ≤ 96
+    @test fun(NSEBase.ddx_2!,     FTField(g), u) == 0
     @test fun(NSEBase.ddx_3!,     FTField(g), u) == 0
-    @test fun(NSEBase.laplacian!, FTField(g), u) ≤ 96
+    @test fun(NSEBase.laplacian!, FTField(g), u) == 0
     @test fun(NSEBase.ddx_4!,     similar(a), a) == 0
 end
