@@ -49,6 +49,6 @@
         _nt = nt >= 0 ? nt + 1 : Nt + nt + 1
         c[m, _nx, _nz, _nt] /= 1 + 4π^2*nx^2 + 4π^2*nz^2 + 4π^2*nt^2
     end
-    @test mul!(copy(a), A) ≈ c
-    @test dot(a, A, b) == dot(a, mul!(copy(b), A))
+    @test lmul!(A, copy(a)) ≈ c
+    @test dot(a, A, b) == dot(a, lmul!(A, copy(b)))
 end
