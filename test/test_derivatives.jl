@@ -8,7 +8,7 @@
     dudz_fun(y, x, z, t)   = -5.8*(1 - y^2)*cos(4π*x)*sin(5.8*z)*exp(cos(5.8*z))*atan(sin(2π*t))
     d2udz2_fun(y, x, z, t) = (5.8^2)*(1 - y^2)*cos(4π*x)*(sin(5.8*z)^2 - cos(5.8*z))*exp(cos(5.8*z))*atan(sin(2π*t))
     lapl_fun(y, x, z, t)   = d2udx2_fun(y, x, z, t) + d2udy2_fun(y, x, z, t) + d2udz2_fun(y, x, z, t)
-    duds_fun(y, x, z, t)   = ((1 - y^2)*cos(4π*x)*exp(cos(5.8*z))*cos(2π*t))/(sin(2π*t)^2 + 1)
+    dudt_fun(y, x, z, t)   = 2π*((1 - y^2)*cos(4π*x)*exp(cos(5.8*z))*cos(2π*t))/(sin(2π*t)^2 + 1)
 
     # construct grid
     Ny = 32; Nx = 15; Nz = 33; Nt = 51
@@ -42,7 +42,7 @@
     end
     Ψ = (Ψ₁, zero(Ψ₁), zero(Ψ₁))
     a = project(FFT(VectorField(g, u_fun)), Ψ)
-    @test NSEBase.ddx_4!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
+    @test NSEBase.ddx_4!(similar(a), a) ≈ project(FFT(VectorField(g, dudt_fun)), Ψ)
 
     # test allocation
     fun(dx, a, b) = @allocated dx(a, b)

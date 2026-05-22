@@ -49,7 +49,7 @@
 
     # test norm difference methods
     @test normdiff(FFT(VectorField(g, f1)), FFT(VectorField(g, f2)))^2 ≈ 0.625777 rtol=1e-5
-    @test_broken normdiff(project(FFT(VectorField(g, f1)), Ψ), project(FFT(VectorField(g, f2)), Ψ))^2 ≈ 0.625777 rtol=1e-5
+    @test normdiff(project(FFT(VectorField(g, f1)), Ψ), project(FFT(VectorField(g, f2)), Ψ))^2 ≈ 0.625777 rtol=1e-5
     mindiff, s_mins = minnormdiff(FFT(Field(g, f1)), FFT(Field(g, (y, x, z, t)->f1(y, x+π, z-π, t-π/2))), (4, 4, 4))
     # FIXME: the t-shift is not correct?
     @test_broken all(s_mins .≈ (0, π, 0.25)) # minimum norm difference is zero since f1 doesn't depend on x

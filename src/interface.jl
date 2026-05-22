@@ -15,3 +15,18 @@ function NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FT
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₂⁺ : NSEBase.grid(u).D₂, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
+
+
+# ── channel quadrature ───────────────────────────────────────────────────────
+# Wall-normal Chebyshev quadrature ⟨u, v⟩_y = ∫₋₁¹ ū(y) v(y) dy, approximated
+# by `sum_i ws[i] * conj(u[i]) * v[i]` over the `Ny` collocation points.  Used
+# internally by channel-specific norms and weighted inner products that
+# integrate only over the inhomogeneous direction.
+
+function _channel_int(u::AbstractVector{T}, ws::AbstractVector, v::AbstractVector{T}, Ny::Integer) where {T}
+    s = zero(T)
+    @inbounds for i in 1:Ny
+        s += ws[i] * conj(u[i]) * v[i]
+    end
+    return s
+end

@@ -256,21 +256,27 @@ _equal_points(N, L) = (0:(N - 1))/(N)*L
     wavenumber_scale(g::AbstractChannelGrid, dim::Int) -> Real
 
 Return the wavenumber scale for array dimension `dim`, used to convert
-integer wavenumber indices to physical wavenumbers `k = n * wavenumber_scale`.
+integer FFT-mode indices to physical wavenumbers `k = n * wavenumber_scale`.
 
-`dim` is an array dimension. The coordinate mapping is defined by `CHANNEL_AXES`:
+For every periodic direction the scale equals `2π / period`, so a phase
+factor `cis(n * shift * wavenumber_scale)` rotates one full revolution for
+each integer mode `n` when `shift` covers one physical period.  The
+coordinate-to-array-dimension mapping is defined by `CHANNEL_AXES`:
+
 - `dim = CHANNEL_AXES[1]` (streamwise `x`): returns `g.α = 2π/Lx`.
 - `dim = CHANNEL_AXES[2]` (wall-normal `y`): returns `one(g.α)`
-  (inhomogeneous; this value should never be used in practice).
+  (inhomogeneous; this value is never used in practice).
 - `dim = CHANNEL_AXES[3]` (spanwise `z`): returns `g.β = 2π/Lz`.
-- `dim = CHANNEL_AXES[4]` (temporal `t`): returns `one(g.α)` (unit-period scaling).
+- `dim = CHANNEL_AXES[4]` (temporal `t`): returns `T(2π)`, the scale for the
+  unit-period temporal grid `t ∈ [0, 1)`.
 
-This method is called by NSEBase generic routines such as `minnormdiff` to
-compute shift step sizes in each homogeneous direction.
+This method is called by NSEBase generic routines (`shift!`, `ddx_n!`,
+`minnormdiff`, …) to convert FFT-mode indices and physical-unit shifts.
 """
 @inline function NSEBase.wavenumber_scale(g::AbstractChannelGrid{S, T}, dim::Int) where {S, T}
-    dim == 2 && return g.α
-    dim == 3 && return g.β
+    dim == CHANNEL_AXES[1] && return g.α
+    dim == CHANNEL_AXES[3] && return g.β
+    dim == CHANNEL_AXES[4] && return T(2π)
     return one(T)
 end
 
