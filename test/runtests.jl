@@ -1,9 +1,10 @@
 using Test
-
-using FFTW, Random, LinearAlgebra
-
-using ChebUtils, FDGrids
-
+using FFTW
+using Random
+using LinearAlgebra
+using ChebUtils
+using FDGrids
+using NSEBase
 using ReSolverChannelFlow
 
 include("test_grid.jl")

@@ -27,17 +27,21 @@
 
     # construct grid
     Ny = 32; Nx = 33; Nz = 33; Nt = 51
+    D₁ = chebdiff(Ny)
+    D₂ = chebddiff(Ny)
+    ws = chebws(Ny)
     g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
                     2.9, 5.8,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny),
-                    adjoint_diff=false)
+                    D₁,
+                    D₂,
+                    D₁,
+                    D₂,
+                    ws)
 
     # test nonlinear operator
     Re = rand()*50
     Ro = rand()
-    op = CartesianPrimitiveRotatingNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE)
+    op = CartesianPrimitive3DNSE(g, Re, force=CoriolisForce(Ro), flags=FFTW.ESTIMATE)
     u = FFT(VectorField(g, u_fun, v_fun, w_fun))
     exact = FFT(VectorField(g, u_out_fun, v_out_fun, w_out_fun))
     @test op(0.0, u, similar(u)) ≈ exact
@@ -64,14 +68,19 @@ end
     # construct grid
     Ny = 16; Nx = 15; Nz = 15; Nt = 21
     y, ws = FDGrids.grid(Ny, -1, 1, MappedGrid(1))
-    Dy = DiffMatrix(y, 3, 1)
-    Dy2 = DiffMatrix(y, 3, 2)
+    D₁ = DiffMatrix(y, 3, 1)
+    D₂ = DiffMatrix(y, 3, 2)
+    D₁⁺ = adjoint(D₁, ws)
+    D₂⁺ = adjoint(D₂, ws)
     g = ChannelGrid(y, Nx, Nz, Nt,
                     2.9, 5.8,
-                    Dy,
-                    Dy2,
-                    ws,
-                    adjoint_diff=true)
+                    D₁,
+                    D₂,
+                    D₁⁺,
+                    D₂⁺,
+                    ws)
+    @test g.D₁⁺ isa AdjointDiffMatrix
+    @test g.D₂⁺ isa AdjointDiffMatrix
 
     # define fields
     u       = FFT(VectorField(g, ux_fun, uy_fun, uz_fun))
@@ -82,9 +91,9 @@ end
     # test perturbed nonlinear equations approximates linearised equations
     Re = rand()*50
     Ro = rand()
-    op_nl = CartesianPrimitiveRotatingNSE(g,  Re, Ro=Ro, flags=FFTW.ESTIMATE)
-    op_ln = CartesianPrimitiveRotatingLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, mode=Forward())
-    op_ad = CartesianPrimitiveRotatingLNSE(g, Re, Ro=Ro, flags=FFTW.ESTIMATE, mode=AdjointDiscrete())
+    op_nl = CartesianPrimitive3DNSE(g,  Re, force=CoriolisForce(Ro), flags=FFTW.ESTIMATE)
+    op_ln = CartesianPrimitive3DLNSE(g, Re, force=CoriolisForce(Ro), flags=FFTW.ESTIMATE, mode=Forward())
+    op_ad = CartesianPrimitive3DLNSE(g, Re, force=CoriolisForce(Ro), flags=FFTW.ESTIMATE, mode=AdjointDiscrete())
     a = op_nl(0.0, u .+ 1e-6.*v, similar(u)) - op_nl(0.0, u, similar(u))
     b = op_ln(0.0, u, 1e-6.*v, similar(u))
     @test norm(a - b) < 1e-11
@@ -94,4 +103,57 @@ end
     @test abs(dot(op_ln(0.0, u, v, similar(u)), w) - dot(v, op_ad(0.0, u, w, similar(u)))) < 1e-12
     # ! use below test for continous adjoint
     # @test abs(dot(op_ln(0.0, u, v, similar(u)), w) - dot(v, op_ad(0.0, u, w, similar(u))) - dot(v, div_u_w)) < 1e-12
+end
+
+@testset "Plane Couette flow constructor        " begin
+    Ny = 16; Nx = 15; Nz = 15; Nt = 21
+    D₁ = chebdiff(Ny)
+    D₂ = chebddiff(Ny)
+    ws = chebws(Ny)
+    D₁⁺ = D₁
+    D₂⁺ = D₂
+    g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
+                    2.9, 5.8,
+                    D₁,
+                    D₂,
+                    D₁⁺,
+                    D₂⁺,
+                    ws)
+
+    Re = rand()*50
+    Ro = rand()
+    op = PlaneCouetteFlow(g, Re, Ro=Ro, fftw_flags=FFTW.ESTIMATE)
+
+    @test g.D₁⁺ === D₁⁺
+    @test g.D₂⁺ === D₂⁺
+    @test op.base == (copy(g.y), nothing, nothing)
+    @test op.nl.force.Ro == Ro
+    @test op.ln.force.Ro == Ro
+end
+
+@testset "Constant forcing                      " begin
+    Ny = 8; Nx = 5; Nz = 5; Nt = 5
+    y = collect(range(-1, 1; length=Ny))
+    D = zeros(Ny, Ny)
+    ws = ones(Ny)
+    g = ChannelGrid(y, Nx, Nz, Nt,
+                    1.0, 1.0,
+                    D,
+                    D,
+                    D,
+                    D,
+                    ws)
+
+    out = VectorField(g)
+    force = ConstantForcing(2.5)
+    k0 = WaveNumberVector(0, 0, 0)
+
+    force(out, nothing, Forward())
+    @test all(out[1][k0] .== 2.5 + 0im)
+    @test all(out[2][k0] .== 0.0 + 0im)
+    @test all(out[3][k0] .== 0.0 + 0im)
+    @test all(out[1][WaveNumberVector(1, 0, 0)] .== 0.0 + 0im)
+
+    @test (@allocated force(out, nothing, Forward())) == 0
+    @test all(out[1][k0] .== 5.0 + 0im)
 end

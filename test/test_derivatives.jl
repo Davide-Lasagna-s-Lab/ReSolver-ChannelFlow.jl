@@ -8,42 +8,47 @@
     dudz_fun(y, x, z, t)   = -5.8*(1 - y^2)*cos(4π*x)*sin(5.8*z)*exp(cos(5.8*z))*atan(sin(2π*t))
     d2udz2_fun(y, x, z, t) = (5.8^2)*(1 - y^2)*cos(4π*x)*(sin(5.8*z)^2 - cos(5.8*z))*exp(cos(5.8*z))*atan(sin(2π*t))
     lapl_fun(y, x, z, t)   = d2udx2_fun(y, x, z, t) + d2udy2_fun(y, x, z, t) + d2udz2_fun(y, x, z, t)
-    duds_fun(y, x, z, t)   = ((1 - y^2)*cos(4π*x)*exp(cos(5.8*z))*cos(2π*t))/(sin(2π*t)^2 + 1)
+    dudt_fun(y, x, z, t)   = 2π*((1 - y^2)*cos(4π*x)*exp(cos(5.8*z))*cos(2π*t))/(sin(2π*t)^2 + 1)
 
     # construct grid
     Ny = 32; Nx = 15; Nz = 33; Nt = 51
+    D₁ = chebdiff(Ny)
+    D₂ = chebddiff(Ny)
+    ws = chebws(Ny)
     g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
                     2π, 5.8,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny),
-                    adjoint_diff=false)
+                    D₁,
+                    D₂,
+                    D₁,
+                    D₂,
+                    ws,)
 
     # test values of derivatives
     u = FFT(Field(g, u_fun))
-    @test ReSolverChannelFlow.NSEBase.ddx_x!(    FTField(g), u) ≈ FFT(Field(g, dudx_fun))
-    @test ReSolverChannelFlow.NSEBase.ddx_y!(    FTField(g), u) ≈ FFT(Field(g, dudy_fun))
-    @test ReSolverChannelFlow.NSEBase.ddx_z!(    FTField(g), u) ≈ FFT(Field(g, dudz_fun))
-    @test ReSolverChannelFlow.NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
+    @test NSEBase.ddx_1!(    FTField(g), u) ≈ FFT(Field(g, dudx_fun))
+    @test NSEBase.ddx_2!(    FTField(g), u) ≈ FFT(Field(g, dudy_fun))
+    @test NSEBase.ddx_3!(    FTField(g), u) ≈ FFT(Field(g, dudz_fun))
+    @test NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
 
     # test time derivative of projected field
     M = 10
-    Ψ = zeros(ComplexF64, Ny, M, (Nx >> 1) + 1, Nz, Nt)
+    Ψ₁ = zeros(ComplexF64, Ny, M, (Nx >> 1) + 1, Nz, Nt)
     for nt in 1:Nt, nz in 1:Nz, nx in 1:(Nx >> 1) + 1
-        Ψ[:, :, nx, nz, nt] .= qr(randn(ComplexF64, Ny, M)).Q[:, 1:M]
+        Ψ₁[:, :, nx, nz, nt] .= qr(randn(ComplexF64, Ny, M)).Q[:, 1:M]
     end
     for m in 1:M
-        ReSolverChannelFlow.NSEBase.apply_symmetry!(@view(Ψ[:, m, :, :, :]), (2, 3, 4))
-        Ψ[:, m, 1, 1, 1] .= real.(Ψ[:, m, 1, 1, 1])
+        NSEBase.apply_symmetry!(@view(Ψ₁[:, m, :, :, :]), (2, 3, 4))
+        Ψ₁[:, m, 1, 1, 1] .= real.(Ψ₁[:, m, 1, 1, 1])
     end
+    Ψ = (Ψ₁, zero(Ψ₁), zero(Ψ₁))
     a = project(FFT(VectorField(g, u_fun)), Ψ)
-    @test ReSolverChannelFlow.NSEBase.dds!(similar(a), a) ≈ project(FFT(VectorField(g, duds_fun)), Ψ)
+    @test NSEBase.ddx_4!(similar(a), a) ≈ project(FFT(VectorField(g, dudt_fun)), Ψ)
 
     # test allocation
     fun(dx, a, b) = @allocated dx(a, b)
-    @test fun(ReSolverChannelFlow.NSEBase.ddx_x!,      FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.NSEBase.ddx_y!,      FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.NSEBase.ddx_z!,      FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.NSEBase.laplacian!, FTField(g), u) == 0
-    @test fun(ReSolverChannelFlow.NSEBase.dds!,       similar(a), a) == 0
+    @test fun(NSEBase.ddx_1!,     FTField(g), u) == 0
+    @test fun(NSEBase.ddx_2!,     FTField(g), u) == 0
+    @test fun(NSEBase.ddx_3!,     FTField(g), u) == 0
+    @test fun(NSEBase.laplacian!, FTField(g), u) == 0
+    @test fun(NSEBase.ddx_4!,     similar(a), a) == 0
 end

@@ -5,17 +5,16 @@
 
     # construct grid
     Ny = 32; Nx = 5; Nz = 33; Nt = 51
+    D₁ = chebdiff(Ny)
+    D₂ = chebddiff(Ny)
+    ws = chebws(Ny)
     g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
                     1.0, 1.0,
-                    chebdiff(Ny),
-                    chebddiff(Ny),
-                    chebws(Ny),
-                    adjoint_diff=false)
-
-    # test channel integration
-    u = ComplexF64[(y^2)*cos(π*y/2) for y in g.y]
-    v = ComplexF64[exp(-5*(y^2)) for y in g.y]
-    @test ReSolverChannelFlow._channel_int(u, chebws(Ny), v, Ny) ≈ 0.0530025 rtol=1e-5
+                    D₁,
+                    D₂,
+                    D₁,
+                    D₂,
+                    ws)
 
     # generate modes
     M = Ny
@@ -45,7 +44,7 @@
 
     # test norm difference methods
     @test normdiff(FFT(VectorField(g, f1)), FFT(VectorField(g, f2)))^2 ≈ 0.625777 rtol=1e-5
-    @test_broken normdiff(project(FFT(VectorField(g, f1)), Ψ), project(FFT(VectorField(g, f2)), Ψ))^2 ≈ 0.625777 rtol=1e-5
+    @test normdiff(project(FFT(VectorField(g, f1)), Ψ), project(FFT(VectorField(g, f2)), Ψ))^2 ≈ 0.625777 rtol=1e-5
     mindiff, s_mins = minnormdiff(FFT(Field(g, f1)), FFT(Field(g, (y, x, z, t)->f1(y, x+π, z-π, t-π/2))), (4, 4, 4))
     # FIXME: the t-shift is not correct?
     @test_broken all(s_mins .≈ (0, π, 0.25)) # minimum norm difference is zero since f1 doesn't depend on x
