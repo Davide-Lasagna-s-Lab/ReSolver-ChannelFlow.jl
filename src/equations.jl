@@ -92,7 +92,7 @@ plane_poiseuille_base(g::AbstractChannelGrid) = @. one(eltype(g.y)) - g.y^2
     PlaneCouetteFlow(g, Re; Ro=0, base=(plane_couette_base(g), nothing, nothing),
                      mode=AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true)
 
-Construct a [`ProjectedNSE`](@ref) for plane-Couette flow at Reynolds number
+Construct a `ProjectedNSE` for plane-Couette flow at Reynolds number
 `Re` on the channel grid `g`.
 
 # Keyword arguments
@@ -113,7 +113,7 @@ PlaneCouetteFlow(g::AbstractChannelGrid, Re; Ro=0, base=(plane_couette_base(g), 
     PlanePoiseuilleFlow(g, Re; Ro=0, f=1, base=(plane_poiseuille_base(g), nothing, nothing),
                         mode=AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true)
 
-Construct a [`ProjectedNSE`](@ref) for plane-Poiseuille flow at Reynolds number
+Construct a `ProjectedNSE` for plane-Poiseuille flow at Reynolds number
 `Re` on the channel grid `g`.
 
 # Keyword arguments
@@ -133,7 +133,7 @@ PlanePoiseuilleFlow(g::AbstractChannelGrid, Re; Ro=0, f=1, base=(plane_poiseuill
     _plane_channel_flow(g, Re, base, _poiseuille_force(Ro, f); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
 _plane_channel_flow(g::AbstractChannelGrid, Re, base, force; mode, fftw_flags, dealias) =
-    NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
+    NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive3D(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
 
 _coriolis_force(Ro) = iszero(Ro) ? NSEBase.NoForce() : CoriolisForce(Ro)
 _poiseuille_force(Ro, f) = iszero(Ro) ? ConstantForcing(f) : NSEBase.CompoundForcing(ConstantForcing(f), CoriolisForce(Ro))

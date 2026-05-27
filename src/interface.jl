@@ -6,27 +6,34 @@
 # of FTField are not recognised as strided arrays by BLAS. Unwrapping first
 # ensures mul! dispatches to the fast BLAS / ChebUtils / FDGrids kernels.
 
+"""
+    NSEBase.ddx!(out::FTField{G}, u::FTField{G}, ::Val{1}; adjoint=false) where {G<:AbstractChannelGrid}
+
+Apply the wall-normal derivative to a channel-flow Fourier field.
+
+For the default channel layout, the wall-normal direction is storage dimension
+`1`, exposed as `CHANNEL_INHOMOGENEOUS_DIMS[1]`. With `adjoint=false`, this
+method applies `grid(u).D₁`; with `adjoint=true`, it applies `grid(u).D₁⁺`.
+
+The derivative operator itself is supplied by the grid and must implement
+dimension-wise `LinearAlgebra.mul!` along the inhomogeneous dimension.
+"""
 function NSEBase.ddx!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}, ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]}; adjoint=false) where {G<:AbstractChannelGrid}
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₁⁺ : NSEBase.grid(u).D₁, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
 
+"""
+    NSEBase.inhomogeneous_laplacian!(out::FTField{G}, u::FTField{G}; adjoint=false) where {G<:AbstractChannelGrid}
+
+Apply the wall-normal contribution to the Laplacian of a channel-flow Fourier
+field.
+
+With `adjoint=false`, this method applies `grid(u).D₂`; with `adjoint=true`,
+it applies `grid(u).D₂⁺`. Homogeneous Fourier contributions are handled by the
+generic NSEBase Laplacian routines.
+"""
 function NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}; adjoint::Bool=false) where {G<:AbstractChannelGrid}
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₂⁺ : NSEBase.grid(u).D₂, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
-end
-
-
-# ── channel quadrature ───────────────────────────────────────────────────────
-# Wall-normal Chebyshev quadrature ⟨u, v⟩_y = ∫₋₁¹ ū(y) v(y) dy, approximated
-# by `sum_i ws[i] * conj(u[i]) * v[i]` over the `Ny` collocation points.  Used
-# internally by channel-specific norms and weighted inner products that
-# integrate only over the inhomogeneous direction.
-
-function _channel_int(u::AbstractVector{T}, ws::AbstractVector, v::AbstractVector{T}, Ny::Integer) where {T}
-    s = zero(T)
-    @inbounds for i in 1:Ny
-        s += ws[i] * conj(u[i]) * v[i]
-    end
-    return s
 end

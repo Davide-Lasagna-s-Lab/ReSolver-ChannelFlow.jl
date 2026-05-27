@@ -192,8 +192,8 @@ pre-dealiasing physical resolution stored in `S = (Nx, Ny, Nz, Nt)`.
 When `dealias=true`, the homogeneous resolutions are first expanded to the
 padded (dealiased) size before computing coordinates.
 
-See also [`points(g, N)`](@ref) for the lower-level method that accepts an
-explicit homogeneous size tuple.
+See also `points(g, N)` for the lower-level method that accepts an explicit
+homogeneous size tuple.
 """
 NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} = begin
     if dealias
