@@ -34,8 +34,8 @@
                     2.9, 5.8,
                     D₁,
                     D₂,
-                    adjoint(D₁, ws),
-                    adjoint(D₂, ws),
+                    D₁,
+                    D₂,
                     ws)
 
     # test nonlinear operator
@@ -67,18 +67,18 @@ end
 
     # construct grid
     Ny = 16; Nx = 15; Nz = 15; Nt = 21
-    fd_grid = FDGrids.grid(Ny, -1, 1, MappedGrid(1))
-    D₁ = DiffMatrix(fd_grid.xs, 3, 1)
-    D₂ = DiffMatrix(fd_grid.xs, 3, 2)
-    D₁⁺ = adjoint(D₁, fd_grid.ws)
-    D₂⁺ = adjoint(D₂, fd_grid.ws)
-    g = ChannelGrid(fd_grid.xs, Nx, Nz, Nt,
+    y, ws = FDGrids.grid(Ny, -1, 1, MappedGrid(1))
+    D₁ = DiffMatrix(y, 3, 1)
+    D₂ = DiffMatrix(y, 3, 2)
+    D₁⁺ = adjoint(D₁, ws)
+    D₂⁺ = adjoint(D₂, ws)
+    g = ChannelGrid(y, Nx, Nz, Nt,
                     2.9, 5.8,
                     D₁,
                     D₂,
                     D₁⁺,
                     D₂⁺,
-                    fd_grid.ws)
+                    ws)
     @test g.D₁⁺ isa AdjointDiffMatrix
     @test g.D₂⁺ isa AdjointDiffMatrix
 
@@ -110,8 +110,8 @@ end
     D₁ = chebdiff(Ny)
     D₂ = chebddiff(Ny)
     ws = chebws(Ny)
-    D₁⁺ = adjoint(D₁, ws)
-    D₂⁺ = adjoint(D₂, ws)
+    D₁⁺ = D₁
+    D₂⁺ = D₂
     g = ChannelGrid(chebpts(Ny), Nx, Nz, Nt,
                     2.9, 5.8,
                     D₁,

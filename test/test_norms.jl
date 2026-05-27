@@ -12,8 +12,8 @@
                     1.0, 1.0,
                     D₁,
                     D₂,
-                    adjoint(D₁, ws),
-                    adjoint(D₂, ws),
+                    D₁,
+                    D₂,
                     ws)
 
     # generate modes

@@ -19,9 +19,9 @@
                     2π, 5.8,
                     D₁,
                     D₂,
-                    adjoint(D₁, ws),
-                    adjoint(D₂, ws),
-                    ws)
+                    D₁,
+                    D₂,
+                    ws,)
 
     # test values of derivatives
     u = FFT(Field(g, u_fun))

@@ -1,7 +1,6 @@
 module ReSolverChannelFlow
 
 import FFTW
-import JLD2
 import LinearAlgebra
 import NSEBase
 

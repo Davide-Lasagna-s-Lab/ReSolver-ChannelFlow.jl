@@ -100,8 +100,8 @@ struct ChannelGrid{S, T, D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T}, D3<:Abstr
                        ws::Vector{T},
                         α::T,
                         β::T) where {S, T,
-                                    D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T},
-                                    D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}} = begin
+                                     D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T},
+                                     D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}} = begin
         Nx, Ny, Nz, Nt = S
         (isodd(Nx) && isodd(Nz) && isodd(Nt)) || throw(ArgumentError("grid must be odd in streamwise, spanwise, and time directions"))
         length(y) == length(ws) == Ny || throw(ArgumentError("quadrature weights and collocation points have incompatible sizes"))
