@@ -130,3 +130,30 @@ end
     @test op.nl.force.Ro == Ro
     @test op.ln.force.Ro == Ro
 end
+
+@testset "Constant forcing                     " begin
+    Ny = 8; Nx = 5; Nz = 5; Nt = 5
+    y = collect(range(-1, 1; length=Ny))
+    D = zeros(Ny, Ny)
+    ws = ones(Ny)
+    g = ChannelGrid(y, Nx, Nz, Nt,
+                    1.0, 1.0,
+                    D,
+                    D,
+                    D,
+                    D,
+                    ws)
+
+    out = VectorField(g)
+    force = ConstantForcing(2.5)
+    k0 = WaveNumberVector(0, 0, 0)
+
+    force(out, nothing, Forward())
+    @test all(out[1][k0] .== 2.5 + 0im)
+    @test all(out[2][k0] .== 0.0 + 0im)
+    @test all(out[3][k0] .== 0.0 + 0im)
+    @test all(out[1][WaveNumberVector(1, 0, 0)] .== 0.0 + 0im)
+
+    @test (@allocated force(out, nothing, Forward())) == 0
+    @test all(out[1][k0] .== 5.0 + 0im)
+end

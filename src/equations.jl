@@ -59,7 +59,8 @@ ConstantForcing() = ConstantForcing(1.0)
 function (f::ConstantForcing)(out::NSEBase.VectorField{N, <:NSEBase.FTField{<:AbstractChannelGrid}},
                               _,
                               ::NSEBase.Mode) where {N}
-    parent(out[1])[:, 1, 1, 1] .+= f.value
+    mean_mode = out[1][NSEBase.WaveNumberVector(0, 0, 0)]
+    mean_mode .+= f.value
     return out
 end
 
