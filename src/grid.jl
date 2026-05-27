@@ -82,31 +82,32 @@ where `out` and `u` are compatible channel fields. This lets the package that
 owns the differentiation operator decide how forward and adjoint operators are
 represented and applied.
 """
-struct ChannelGrid{S, T, D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T}, D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}} <: AbstractChannelGrid{S, T}
-    y  :: Vector{T}
+struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S, T}
+    y  :: Y
     D₁ :: D1
     D₂ :: D2
     D₁⁺:: D3
     D₂⁺:: D4
-    ws :: Vector{T}
+    ws :: W
     α  :: T
     β  :: T
 
-    ChannelGrid{S, T}(  y::Vector{T},
+    ChannelGrid{S, T}(  y::Y,
                        D₁::D1,
                        D₂::D2,
                       D₁⁺::D3,
                       D₂⁺::D4,
-                       ws::Vector{T},
+                       ws::W,
                         α::T,
-                        β::T) where {S, T,
+                        β::T) where {S, T, Y<:AbstractVector{T},
                                      D1<:AbstractMatrix{T}, D2<:AbstractMatrix{T},
-                                     D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T}} = begin
+                                     D3<:AbstractMatrix{T}, D4<:AbstractMatrix{T},
+                                     W<:AbstractVector{T}} = begin
         Nx, Ny, Nz, Nt = S
         (isodd(Nx) && isodd(Nz) && isodd(Nt)) || throw(ArgumentError("grid must be odd in streamwise, spanwise, and time directions"))
         length(y) == length(ws) == Ny || throw(ArgumentError("quadrature weights and collocation points have incompatible sizes"))
         size(D₁) == size(D₂) == size(D₁⁺) == size(D₂⁺) == (Ny, Ny) || throw(ArgumentError("differentiation matrices have incompatible sizes"))
-        return new{S, T, D1, D2, D3, D4}(y, D₁, D₂, D₁⁺, D₂⁺, ws, α, β)
+        return new{S, T, Y, D1, D2, D3, D4, W}(y, D₁, D₂, D₁⁺, D₂⁺, ws, α, β)
     end
 end
 

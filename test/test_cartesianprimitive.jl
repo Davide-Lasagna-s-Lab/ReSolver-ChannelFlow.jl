@@ -105,7 +105,7 @@ end
     # @test abs(dot(op_ln(0.0, u, v, similar(u)), w) - dot(v, op_ad(0.0, u, w, similar(u))) - dot(v, div_u_w)) < 1e-12
 end
 
-@testset "Plane Couette flow constructor       " begin
+@testset "Plane Couette flow constructor        " begin
     Ny = 16; Nx = 15; Nz = 15; Nt = 21
     D₁ = chebdiff(Ny)
     D₂ = chebddiff(Ny)
@@ -131,7 +131,7 @@ end
     @test op.ln.force.Ro == Ro
 end
 
-@testset "Constant forcing                     " begin
+@testset "Constant forcing                      " begin
     Ny = 8; Nx = 5; Nz = 5; Nt = 5
     y = collect(range(-1, 1; length=Ny))
     D = zeros(Ny, Ny)
