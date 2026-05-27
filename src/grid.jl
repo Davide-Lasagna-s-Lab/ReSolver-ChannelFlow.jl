@@ -12,25 +12,31 @@ Base.size(::AbstractChannelGrid{S}) where {S} = S
 # --------------------- #
 # concrete channel grid #
 # --------------------- #
-struct ChannelGrid{S, T, ADJ, D1, D2, D3, D4} <: AbstractChannelGrid{S, T}
-    y::Vector{T}
+struct ChannelGrid{S, T, ADJ, Y, W, D1, D2, D3, D4} <: AbstractChannelGrid{S, T}
+    y::Y
     Dy::D1
     Dy2::D2
     Dya::D3
     Dy2a::D4
-    ws::Vector{T}
+    ws::W
     α::T
     β::T
 
-    ChannelGrid{S, T, ADJ}(y::Vector{T},
-                          Dy::AbstractMatrix{T},
-                         Dy2::AbstractMatrix{T},
-                         Dya::AbstractMatrix{T},
-                        Dy2a::AbstractMatrix{T},
-                          ws::Vector{T},
+    ChannelGrid{S, T, ADJ}(y::Y,
+                          Dy::D1,
+                         Dy2::D2,
+                         Dya::D3,
+                        Dy2a::D4,
+                          ws::W,
                            α::T,
-                           β::T) where {S, T, ADJ} =
-        new{S, T, ADJ, typeof(Dy), typeof(Dy2), typeof(Dya), typeof(Dy2a)}(y, Dy, Dy2, Dya, Dy2a, ws, α, β)
+                           β::T) where {S, T, ADJ,
+                                        Y<:AbstractVector{T},
+                                        D1<:AbstractMatrix{T},
+                                        D2<:AbstractMatrix{T},
+                                        D3<:AbstractMatrix{T},
+                                        D4<:AbstractMatrix{T},
+                                        W<:AbstractVector{T}} =
+        new{S, T, ADJ, Y, W, D1, D2, D3, D4}(y, Dy, Dy2, Dya, Dy2a, ws, α, β)
 end
 
 function ChannelGrid(y, Nx, Nz, Nt, α, β, Dy, Dy2, ws, ::Type{T}=Float64; adjoint_diff::Bool=true) where {T}
