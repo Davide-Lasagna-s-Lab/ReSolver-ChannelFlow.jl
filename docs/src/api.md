@@ -25,8 +25,8 @@ NSEBase.growto(::ReSolverChannelFlow.ChannelGrid, ::NTuple{3, Int})
 ## Wall-Normal Operators
 
 ```@docs
-NSEBase.ddx!(::NSEBase.FTField{G}, ::NSEBase.FTField{G}, ::Val{1}; adjoint=false) where {G <: ReSolverChannelFlow.AbstractChannelGrid}
-NSEBase.inhomogeneous_laplacian!(::NSEBase.FTField{G}, ::NSEBase.FTField{G}; adjoint::Bool=false) where {G <: ReSolverChannelFlow.AbstractChannelGrid}
+NSEBase.ddx!(::NSEBase.FTField{G}, ::NSEBase.FTField{G}, ::Val{1}; adjoint=false) where {G <: ReSolverChannelFlow.AbstractChannelGrid{<:Any, <:Any, NSEBase.Undecomposed}}
+NSEBase.inhomogeneous_laplacian!(::NSEBase.FTField{G}, ::NSEBase.FTField{G}; adjoint::Bool=false) where {G <: ReSolverChannelFlow.AbstractChannelGrid{<:Any, <:Any, NSEBase.Undecomposed}}
 ```
 
 ## Forces

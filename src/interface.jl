@@ -7,7 +7,7 @@
 # ensures mul! dispatches to the fast BLAS / ChebUtils / FDGrids kernels.
 
 """
-    NSEBase.ddx!(out::FTField{G}, u::FTField{G}, ::Val{1}; adjoint=false) where {G<:AbstractChannelGrid}
+    NSEBase.dd!(out::FTField{G}, u::FTField{G}, ::Val{1}; adjoint=false) where {G<:AbstractChannelGrid{<:Any, <:Any, NSEBase.Undecomposed}}
 
 Apply the wall-normal derivative to a channel-flow Fourier field.
 
@@ -18,13 +18,13 @@ method applies `grid(u).D₁`; with `adjoint=true`, it applies `grid(u).D₁⁺`
 The derivative operator itself is supplied by the grid and must implement
 dimension-wise `LinearAlgebra.mul!` along the inhomogeneous dimension.
 """
-function NSEBase.ddx!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}, ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]}; adjoint=false) where {G<:AbstractChannelGrid}
+function NSEBase.dd!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}, ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]}; adjoint=false) where {G<:AbstractChannelGrid{<:Any, <:Any, NSEBase.Undecomposed}}
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₁⁺ : NSEBase.grid(u).D₁, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
 
 """
-    NSEBase.inhomogeneous_laplacian!(out::FTField{G}, u::FTField{G}; adjoint=false) where {G<:AbstractChannelGrid}
+    NSEBase.inhomogeneous_laplacian!(out::FTField{G}, u::FTField{G}; adjoint=false) where {G<:AbstractChannelGrid{<:Any, <:Any, NSEBase.Undecomposed}}
 
 Apply the wall-normal contribution to the Laplacian of a channel-flow Fourier
 field.
@@ -33,7 +33,7 @@ With `adjoint=false`, this method applies `grid(u).D₂`; with `adjoint=true`,
 it applies `grid(u).D₂⁺`. Homogeneous Fourier contributions are handled by the
 generic NSEBase Laplacian routines.
 """
-function NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}; adjoint::Bool=false) where {G<:AbstractChannelGrid}
+function NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G}, u::NSEBase.FTField{G}; adjoint::Bool=false) where {G<:AbstractChannelGrid{<:Any, <:Any, NSEBase.Undecomposed}}
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₂⁺ : NSEBase.grid(u).D₂, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
