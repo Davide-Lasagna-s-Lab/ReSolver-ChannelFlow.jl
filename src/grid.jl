@@ -39,8 +39,7 @@ NSEBase generic code. `T` is the scalar real type used by all field arrays
 (`y`, `ws`, `α`, `β`, and all derivative matrices). `DECOMPOSITION` records
 whether storage contains the complete channel or a partition of it.
 """
-abstract type AbstractChannelGrid{S, T, DECOMPOSITION<:NSEBase.GridDecomposition} <:
-    NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER, DECOMPOSITION} end
+abstract type AbstractChannelGrid{S, T} <: NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
@@ -85,8 +84,7 @@ where `out` and `u` are compatible channel fields. This lets the package that
 owns the differentiation operator decide how forward and adjoint operators are
 represented and applied.
 """
-struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <:
-       AbstractChannelGrid{S, T, NSEBase.Undecomposed}
+struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S, T}
     y  :: Y
     D₁ :: D1
     D₂ :: D2
@@ -203,7 +201,7 @@ homogeneous size tuple.
 NSEBase.points(g::ChannelGrid{S}; dealias=false) where {S} = begin
     if dealias
         # size of the fields on the dealiased grid, in logical array (not physical) order 
-        padded_storage_size = NSEBase.get_padded_size(size(g), NSEBase.fft_storage_dims(g))
+        padded_storage_size = NSEBase.get_padded_size(size(g), NSEBase.fft_dims(g))
         NSEBase.points(g, (padded_storage_size[CHANNEL_AXES[1]],
                            padded_storage_size[CHANNEL_AXES[3]],
                            padded_storage_size[CHANNEL_AXES[4]]))
