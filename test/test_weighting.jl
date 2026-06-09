@@ -18,23 +18,23 @@
 
     # generate modes
     M = Ny
-    Ψ = zeros(ComplexF64, Ny, M, (Nx >> 1) + 1, Nz, Nt)
+    Ψ = zeros(ComplexF64, M, Ny, (Nx >> 1) + 1, Nz, Nt)
     for nt in 1:Nt, nz in 1:Nz, nx in 2:(Nx >> 1) + 1
-        Ψ[:, :, nx, nz, nt] .= Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M]
+        Ψ[:, :, nx, nz, nt] .= (Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M])'
     end
     for nz in 2:(Nz >> 1) + 1, nt in 2:Nt
-        Ψ[:, :, 1,     nz,       nt]   .= Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M]
+        Ψ[:, :, 1,     nz,       nt]   .= (Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M])'
         Ψ[:, :, 1, end-nz+2, end-nt+2] .= conj.(Ψ[:, :, 1, nz, nt])
     end
     for nz in 2:Nz
-        Ψ[:, :, 1,     nz,   1] .= Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M]
+        Ψ[:, :, 1,     nz,   1] .= (Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M])'
         Ψ[:, :, 1, end-nz+2, 1] .= conj.(Ψ[:, :, 1, nz, 1])
     end
     for nt in 2:Nt
-        Ψ[:, :, 1, 1,     nt]   .= Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M]
+        Ψ[:, :, 1, 1,     nt]   .= (Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(ComplexF64, Ny, M)).Q[:, 1:M])'
         Ψ[:, :, 1, 1, end-nt+2] .= conj.(Ψ[:, :, 1, 1, nt])
     end
-    Ψ[:, :, 1, 1, 1] .= Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(Float64, Ny, M)).Q[:, 1:M]
+    Ψ[:, :, 1, 1, 1] .= (Diagonal(1 ./ sqrt.(g.ws))*qr(Diagonal(sqrt.(g.ws))*randn(Float64, Ny, M)).Q[:, 1:M])'
 
     # construct fields
     a = project(FFT(VectorField(g, f1)), Ψ)
