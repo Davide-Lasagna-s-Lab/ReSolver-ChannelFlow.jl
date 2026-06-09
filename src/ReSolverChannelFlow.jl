@@ -4,7 +4,8 @@ import FFTW
 import LinearAlgebra
 import NSEBase
 
-export ChannelGrid
+export ChannelGrid, AbstractChannelGrid
+export CHANNEL_AXES, CHANNEL_FFT_ORDER, CHANNEL_INHOMOGENEOUS_DIMS
 export PlaneCouetteFlow, PlanePoiseuilleFlow
 export CoriolisForce, ConstantForcing
 
