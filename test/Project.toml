@@ -7,3 +7,8 @@ NSEBase = "9778a910-ce4d-423e-92be-12991f0cf10c"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReSolverChannelFlow = "ea847659-7271-4841-b0fc-79dd10df6815"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+ChebUtils = {path = "../../ChebUtils.jl"}
+FDGrids = {path = "../../FDGrids.jl"}
+NSEBase = {path = "../../NSEBase.jl"}
