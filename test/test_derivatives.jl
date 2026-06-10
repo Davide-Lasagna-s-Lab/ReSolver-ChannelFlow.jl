@@ -25,9 +25,9 @@
 
     # test values of derivatives
     u = FFT(Field(g, u_fun))
-    @test NSEBase.ddx_1!(    FTField(g), u) ≈ FFT(Field(g, dudx_fun))
-    @test NSEBase.ddx_2!(    FTField(g), u) ≈ FFT(Field(g, dudy_fun))
-    @test NSEBase.ddx_3!(    FTField(g), u) ≈ FFT(Field(g, dudz_fun))
+    @test NSEBase.ddx!(      FTField(g), u) ≈ FFT(Field(g, dudx_fun))
+    @test NSEBase.ddy!(      FTField(g), u) ≈ FFT(Field(g, dudy_fun))
+    @test NSEBase.ddz!(      FTField(g), u) ≈ FFT(Field(g, dudz_fun))
     @test NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
 
     # test time derivative of projected field
@@ -42,13 +42,13 @@
     end
     Ψ = (Ψ₁, zero(Ψ₁), zero(Ψ₁))
     a = project(FFT(VectorField(g, u_fun)), Ψ)
-    @test NSEBase.ddx_4!(similar(a), a) ≈ project(FFT(VectorField(g, dudt_fun)), Ψ)
+    @test NSEBase.ddt!(similar(a), a) ≈ project(FFT(VectorField(g, dudt_fun)), Ψ)
 
     # test allocation
     fun(dx, a, b) = @allocated dx(a, b)
-    @test fun(NSEBase.ddx_1!,     FTField(g), u) == 0
-    @test fun(NSEBase.ddx_2!,     FTField(g), u) == 0
-    @test fun(NSEBase.ddx_3!,     FTField(g), u) == 0
+    @test fun(NSEBase.ddx!,       FTField(g), u) == 0
+    @test fun(NSEBase.ddy!,       FTField(g), u) == 0
+    @test fun(NSEBase.ddz!,       FTField(g), u) == 0
     @test fun(NSEBase.laplacian!, FTField(g), u) == 0
-    @test fun(NSEBase.ddx_4!,     similar(a), a) == 0
+    @test fun(NSEBase.ddt!,       similar(a), a) == 0
 end

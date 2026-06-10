@@ -32,22 +32,23 @@ Pkg.add(url = "https://github.com/Davide-Lasagna-s-Lab/ReSolver-ChannelFlow.jl")
 ## Example
 
 ```julia
-using ChebUtils
+using FDGrids
 using FFTW
 using LinearAlgebra
 using ReSolverChannelFlow
 
 Ny, Nx, Nz, Nt = 33, 31, 31, 15
-D1 = chebdiff(Ny)
-D2 = chebddiff(Ny)
-ws = chebws(Ny)
+g_pts = grid(Ny, -1.0, 1.0, GaussLobattoGrid())
+D1  = DiffMatrix(g_pts.xs, 5, 1)
+D2  = DiffMatrix(g_pts.xs, 5, 2)
+D1⁺ = adjoint(D1, g_pts.ws)
+D2⁺ = adjoint(D2, g_pts.ws)
 
 g = ChannelGrid(
-    chebpts(Ny), Nx, Nz, Nt,
+    g_pts.xs, Nx, Nz, Nt,
     2π, π,
-    D1, D2,
-    adjoint(D1, ws), adjoint(D2, ws),
-    ws,
+    D1, D2, D1⁺, D2⁺,
+    g_pts.ws,
 )
 
 equations = PlaneCouetteFlow(g, 1000; Ro = 0, fftw_flags = FFTW.ESTIMATE)

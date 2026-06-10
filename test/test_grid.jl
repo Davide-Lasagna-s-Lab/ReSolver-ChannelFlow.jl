@@ -30,7 +30,7 @@
     @test pts[2][:]  ≈ range(0, 2π*(1 - 1/Nx_new), length=Nx_new)/α  # x coordinate
     @test pts[3][:]  ≈ range(0, 2π*(1 - 1/Nz_new), length=Nz_new)/β  # z coordinate
     @test pts[4][:]  ≈ range(0,    (1 - 1/Nt_new), length=Nt_new)    # t coordinate
-    padded_storage_size = NSEBase.get_padded_size(size(g), NSEBase.fft_dims(g))
+    padded_storage_size = NSEBase.get_padded_size(size(g), NSEBase.fft_storage_dims(g))
     padded_homogeneous_size = (padded_storage_size[ReSolverChannelFlow.CHANNEL_AXES[1]],
                                padded_storage_size[ReSolverChannelFlow.CHANNEL_AXES[3]],
                                padded_storage_size[ReSolverChannelFlow.CHANNEL_AXES[4]])
