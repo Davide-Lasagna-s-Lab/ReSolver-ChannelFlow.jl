@@ -15,7 +15,6 @@ In the forward direction the force adds `+Ro v` to the streamwise equation
 and `-Ro u` to the wall-normal equation.  The discrete and continuous adjoints
 flip both signs.
 """
-# TODO: need to guarentee that type T is properly enforced to be same as grid element type
 struct CoriolisForce{T}
     Ro::T
 end
@@ -108,8 +107,8 @@ Construct a `ProjectedNSE` for plane-Couette flow at Reynolds number
 - `dealias`: allocate physical-space caches on the dealiased grid. Defaults to
   `true`.
 """
-PlaneCouetteFlow(g::AbstractChannelGrid, Re; Ro=0, base=(plane_couette_base(g), nothing, nothing), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) =
-    _plane_channel_flow(g, Re, base, _coriolis_force(Ro); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+PlaneCouetteFlow(g::AbstractChannelGrid{<:Any, T}, Re; Ro=0, base=(plane_couette_base(g), nothing, nothing), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) where {T} =
+    _plane_channel_flow(g, Re, base, _coriolis_force(T(Ro)); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
 """
     PlanePoiseuilleFlow(g, Re; Ro=0, f=1, base=(plane_poiseuille_base(g), nothing, nothing),
@@ -131,8 +130,8 @@ Construct a `ProjectedNSE` for plane-Poiseuille flow at Reynolds number
 - `dealias`: allocate physical-space caches on the dealiased grid. Defaults to
   `true`.
 """
-PlanePoiseuilleFlow(g::AbstractChannelGrid, Re; Ro=0, f=1, base=(plane_poiseuille_base(g), nothing, nothing), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) =
-    _plane_channel_flow(g, Re, base, _poiseuille_force(Ro, f); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
+PlanePoiseuilleFlow(g::AbstractChannelGrid{<:Any, T}, Re; Ro=0, f=1, base=(plane_poiseuille_base(g), nothing, nothing), mode=NSEBase.AdjointDiscrete(), fftw_flags=FFTW.EXHAUSTIVE, dealias=true) where {T} =
+    _plane_channel_flow(g, Re, base, _poiseuille_force(T(Ro), T(f)); mode=mode, fftw_flags=fftw_flags, dealias=dealias)
 
 _plane_channel_flow(g::AbstractChannelGrid, Re, base, force; mode, fftw_flags, dealias) =
     NSEBase.construct_equations(g, Re, base, NSEBase.CartesianPrimitive3D(); force=force, mode=mode, flags=fftw_flags, dealias=dealias)
