@@ -97,7 +97,7 @@ Construct a `ProjectedNSE` for plane-Couette flow at Reynolds number
 `Re` on the channel grid `g`.
 
 # Keyword arguments
-- `Ro`: inverse Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
+- `Ro`: Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
 - `base`: laminar base flow as a 3-tuple `(U, V, W)` with one entry per velocity
   component; use `nothing` for components with no base flow.  Defaults to the
   Couette profile `U(y) = y` in the streamwise slot.
@@ -118,7 +118,7 @@ Construct a `ProjectedNSE` for plane-Poiseuille flow at Reynolds number
 `Re` on the channel grid `g`.
 
 # Keyword arguments
-- `Ro`: inverse Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
+- `Ro`: Rotation number. When non-zero a [`CoriolisForce`](@ref) is added.
 - `f`: amplitude of the mean pressure-gradient body force ([`ConstantForcing`](@ref)).
   Defaults to `1`, the conventional value when `Re = Re_τ` (friction Reynolds number).
 - `base`: laminar base flow as a 3-tuple `(U, V, W)` with one entry per velocity
