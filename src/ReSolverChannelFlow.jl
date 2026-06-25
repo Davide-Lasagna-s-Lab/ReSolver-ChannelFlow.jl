@@ -3,7 +3,6 @@ module ReSolverChannelFlow
 import FFTW
 import LinearAlgebra
 import NSEBase
-import NSEBaseMPIExt
 
 export ChannelGrid, AbstractChannelGrid
 export CHANNEL_AXES, CHANNEL_FFT_ORDER, CHANNEL_INHOMOGENEOUS_DIMS

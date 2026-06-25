@@ -25,8 +25,8 @@ const CHANNEL_FFT_ORDER = (2, 3, 4)
 const CHANNEL_INHOMOGENEOUS_DIMS = (1,)
 
 """
-    AbstractChannelGrid{S, T, DECOMPOSITION} <:
-        NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER, DECOMPOSITION}
+    AbstractChannelGrid{S, T} <:
+        NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER}
 
 Abstract supertype for all plane-channel grids using the default axis layout
 defined by `CHANNEL_AXES`, `CHANNEL_FFT_ORDER`, and `CHANNEL_INHOMOGENEOUS_DIMS`.
@@ -36,11 +36,10 @@ physical-coordinate order `(Nx, Ny, Nz, Nt)`, where `Ny` is the wall-normal
 resolution and `Nx`, `Nz`, `Nt` are the streamwise, spanwise, and temporal
 resolutions. `Base.size(grid)` permutes `S` into array-dimension order for
 NSEBase generic code. `T` is the scalar real type used by all field arrays
-(`y`, `ws`, `α`, `β`, and all derivative matrices). `DECOMPOSITION` records
-whether storage contains the complete channel or a partition of it.
+(`y`, `ws`, `α`, `β`, and all derivative matrices).
 """
-abstract type AbstractChannelGrid{S, T, DECOMPOSITION<:NSEBase.GridDecomposition} <:
-    NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER, DECOMPOSITION} end
+abstract type AbstractChannelGrid{S, T} <:
+    NSEBase.AbstractGrid{T, 4, CHANNEL_AXES, CHANNEL_FFT_ORDER} end
 
 """
     size(g::AbstractChannelGrid{S}) -> NTuple{4, Int}
@@ -85,8 +84,7 @@ where `out` and `u` are compatible channel fields. This lets the package that
 owns the differentiation operator decide how forward and adjoint operators are
 represented and applied.
 """
-struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <:
-       AbstractChannelGrid{S, T, NSEBase.Undecomposed}
+struct ChannelGrid{S, T, Y, D1, D2, D3, D4, W} <: AbstractChannelGrid{S, T}
     y  :: Y
     D₁ :: D1
     D₂ :: D2

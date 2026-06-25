@@ -15,6 +15,7 @@ In the forward direction the force adds `+Ro v` to the streamwise equation
 and `-Ro u` to the wall-normal equation.  The discrete and continuous adjoints
 flip both signs.
 """
+# TODO: need to guarentee that type T is properly enforced to be same as grid element type
 struct CoriolisForce{T}
     Ro::T
 end
