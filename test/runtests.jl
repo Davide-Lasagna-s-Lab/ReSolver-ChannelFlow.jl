@@ -13,3 +13,6 @@ include("test_shifts.jl")
 include("test_norms.jl")
 include("test_weighting.jl")
 include("test_cartesianprimitive.jl")
+
+# MPI tests
+include("MPI/runtests.jl")

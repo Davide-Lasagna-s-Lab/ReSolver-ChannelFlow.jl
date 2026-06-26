@@ -7,8 +7,8 @@
     d2udy2_fun(y, x, z, t) = -2*cos(4π*x)*exp(cos(5.8*z))*atan(sin(2π*t))
     dudz_fun(y, x, z, t)   = -5.8*(1 - y^2)*cos(4π*x)*sin(5.8*z)*exp(cos(5.8*z))*atan(sin(2π*t))
     d2udz2_fun(y, x, z, t) = (5.8^2)*(1 - y^2)*cos(4π*x)*(sin(5.8*z)^2 - cos(5.8*z))*exp(cos(5.8*z))*atan(sin(2π*t))
-    lapl_fun(y, x, z, t)   = d2udx2_fun(y, x, z, t) + d2udy2_fun(y, x, z, t) + d2udz2_fun(y, x, z, t)
     dudt_fun(y, x, z, t)   = 2π*((1 - y^2)*cos(4π*x)*exp(cos(5.8*z))*cos(2π*t))/(sin(2π*t)^2 + 1)
+    lapl_fun(y, x, z, t)   = d2udx2_fun(y, x, z, t) + d2udy2_fun(y, x, z, t) + d2udz2_fun(y, x, z, t)
 
     # construct grid
     Ny = 32; Nx = 15; Nz = 33; Nt = 51
@@ -28,6 +28,7 @@
     @test NSEBase.ddx!(      FTField(g), u) ≈ FFT(Field(g, dudx_fun))
     @test NSEBase.ddy!(      FTField(g), u) ≈ FFT(Field(g, dudy_fun))
     @test NSEBase.ddz!(      FTField(g), u) ≈ FFT(Field(g, dudz_fun))
+    @test NSEBase.ddt!(      FTField(g), u) ≈ FFT(Field(g, dudt_fun))
     @test NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))
 
     # test time derivative of projected field

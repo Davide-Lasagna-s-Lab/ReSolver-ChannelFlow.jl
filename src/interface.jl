@@ -9,6 +9,29 @@
 # unwrapping first ensures mul! dispatches to the FDGrids kernel.
 
 """
+    NSEBase.derivative_matrix(g::AbstractChannelGrid, stor_dim, Val(order), Val(adj))
+
+Return the wall-normal FD matrix for derivative `order` and adjoint flag `adj`.
+
+`MPIExt._dd_over!` calls this on the parent (serial) grid of a
+`DecomposedGrid` to obtain the local stencil matrix before applying it to each
+rank's wall-normal slab. Defining this method here rather than in a package
+extension avoids boilerplate: `MPIExt` is a direct dependency and the
+method is always needed for any MPI run. Without it the decomposed derivative
+kernel throws a `MethodError` at runtime.
+"""
+function NSEBase.derivative_matrix(g::AbstractChannelGrid,
+                            stor_dim::Int,
+                                    ::Val{ORDER},
+                                    ::Val{ADJ}=Val(false)) where {ORDER, ADJ}
+    stor_dim == CHANNEL_INHOMOGENEOUS_DIMS[1] ||
+        throw(ArgumentError("storage dimension $stor_dim is not the inhomogeneous channel direction"))
+    ORDER == 1 && return ADJ ? g.D₁⁺ : g.D₁
+    ORDER == 2 && return ADJ ? g.D₂⁺ : g.D₂
+    throw(ArgumentError("only orders 1 and 2 are available, got order=$ORDER"))
+end
+
+"""
     NSEBase.dd!(out, u, Val(1); adjoint=false)
 
 Apply the wall-normal first-order finite-difference derivative.
@@ -25,30 +48,6 @@ function NSEBase.dd!(out::NSEBase.FTField{G},
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₁⁺ : NSEBase.grid(u).D₁, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
-
-"""
-    NSEBaseMPIExt.derivative_matrix(g::AbstractChannelGrid, stor_dim, Val(order), Val(adj))
-
-Return the wall-normal FD matrix for derivative `order` and adjoint flag `adj`.
-
-`NSEBaseMPIExt._dd_over!` calls this on the parent (serial) grid of a
-`DecomposedGrid` to obtain the local stencil matrix before applying it to each
-rank's wall-normal slab. Defining this method here rather than in a package
-extension avoids boilerplate: `NSEBaseMPIExt` is a direct dependency and the
-method is always needed for any MPI run. Without it the decomposed derivative
-kernel throws a `MethodError` at runtime.
-"""
-# ! this is not how extensions work, need to fixed in NSEBase.jl #19 since this package shouldn't need to depend directly on MPI
-# function NSEBaseMPIExt.derivative_matrix(g::AbstractChannelGrid,
-#                                           stor_dim::Int,
-#                                           ::Val{ORDER},
-#                                           ::Val{ADJ}=Val(false)) where {ORDER, ADJ}
-#     stor_dim == CHANNEL_INHOMOGENEOUS_DIMS[1] ||
-#         throw(ArgumentError("storage dimension $stor_dim is not the inhomogeneous channel direction"))
-#     ORDER == 1 && return ADJ ? g.D₁⁺ : g.D₁
-#     ORDER == 2 && return ADJ ? g.D₂⁺ : g.D₂
-#     throw(ArgumentError("only orders 1 and 2 are available, got order=$ORDER"))
-# end
 
 """
     NSEBase.inhomogeneous_laplacian!(out, u; adjoint=false)
