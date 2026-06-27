@@ -14,6 +14,7 @@ np   = MPI.Comm_size(comm)
 rank = MPI.Comm_rank(comm)
 
 # define functions
+# TODO: add x-dependence
 ux_fun(y, x, z, t)       = y + (1 - y^2)*exp(cos(5.8*z))*atan(sin(t))
 uy_fun(y, x, z, t)       = cos(π*y/2)^4*sin(5.8*z)*cos(sin(t))
 uz_fun(y, x, z, t)       = (1 - y^2)*cos(5.8*z)*cos(cos(t))
@@ -27,7 +28,7 @@ duydy_fun(y, x, z, t)    = -2π*sin(π*y/2)*cos(π*y/2)^3*sin(5.8*z)*cos(sin(t))
 duzdz_fun(y, x, z, t)    = -5.8*(1 - y^2)*sin(5.8*z)*cos(cos(t))
 
 # construct grid
-Ny = 64; Nx = 5; Nz = 31; Nt = 49
+Ny = 64; Nx = 5; Nz = 15; Nt = 15
 y, ws = FDGrids.grid(Ny, -1, 1, MappedGrid(1))
 D₁ = DiffMatrix(y, 5, 1)
 D₂ = DiffMatrix(y, 5, 2)

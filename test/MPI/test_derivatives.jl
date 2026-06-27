@@ -39,18 +39,8 @@ g = distributed(ChannelGrid(y, Nx, Nz, Nt, α, β, D₁, D₂, D₁⁺, D₂⁺,
 
 # test local data derivatives
 u = FFT(Field(g, u_fun))
-@test NSEBase.ddx!(FTField(g), u) ≈ FFT(Field(g, dudx_fun))
-@test NSEBase.ddz!(FTField(g), u) ≈ FFT(Field(g, dudz_fun))
-@test NSEBase.ddt!(FTField(g), u) ≈ FFT(Field(g, dudt_fun))
-
-# test swapping derivatives
-out1 = FTField(g)
-out2 = FTField(g)
-reqs = init_requests!(u)
-NSEBase.init_ddy!(out1, u)
-NSEBase.init_laplacian!(out2, u)
-wait_requests!(reqs)
-NSEBase.complete_ddy!(out1, u)
-NSEBase.complete_laplacian!(out2, u)
-@test out1 ≈ FFT(Field(g, dudy_fun))
-@test out2 ≈ FFT(Field(g, lapl_fun))
+@test NSEBase.ddx!(      FTField(g), u) ≈ FFT(Field(g, dudx_fun))
+@test NSEBase.ddy!(      FTField(g), u) ≈ FFT(Field(g, dudy_fun))
+@test NSEBase.ddz!(      FTField(g), u) ≈ FFT(Field(g, dudz_fun))
+@test NSEBase.ddt!(      FTField(g), u) ≈ FFT(Field(g, dudt_fun))
+@test NSEBase.laplacian!(FTField(g), u) ≈ FFT(Field(g, lapl_fun))

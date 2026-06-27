@@ -24,6 +24,7 @@ function NSEBase.derivative_matrix(g::AbstractChannelGrid,
                             stor_dim::Int,
                                     ::Val{ORDER},
                                     ::Val{ADJ}=Val(false)) where {ORDER, ADJ}
+    # ! is this check necessary since this method is only ever accessed ensuring it is true? (might need to make stor_dim a value type to ensure this)
     stor_dim == CHANNEL_INHOMOGENEOUS_DIMS[1] ||
         throw(ArgumentError("storage dimension $stor_dim is not the inhomogeneous channel direction"))
     ORDER == 1 && return ADJ ? g.D₁⁺ : g.D₁
