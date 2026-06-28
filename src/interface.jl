@@ -42,10 +42,10 @@ The wall-normal direction is storage dimension `CHANNEL_INHOMOGENEOUS_DIMS[1]`.
 discrete adjoint so that `dot(D₁ u, v) == dot(u, D₁⁺ v)` under the
 wall-normal quadrature weights.
 """
-function NSEBase.dd!(out::NSEBase.FTField{G},
-                     u::NSEBase.FTField{G},
-                     ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]};
-                     adjoint::Bool=false) where {G<:AbstractChannelGrid}
+function NSEBase.inhomogeneous_dd!(out::NSEBase.FTField{G},
+                                     u::NSEBase.FTField{G},
+                                      ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]};
+                               adjoint::Bool=false) where {G<:AbstractChannelGrid}
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₁⁺ : NSEBase.grid(u).D₁, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
@@ -60,8 +60,8 @@ separately by `NSEBase.add_homogeneous_laplacian!`. With `adjoint=true` the
 second-derivative matrix is replaced by its weighted discrete adjoint `D₂⁺`.
 """
 function NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G},
-                                          u::NSEBase.FTField{G};
-                                          adjoint::Bool=false) where {G<:AbstractChannelGrid}
+                                            u::NSEBase.FTField{G};
+                                      adjoint::Bool=false) where {G<:AbstractChannelGrid}
     LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₂⁺ : NSEBase.grid(u).D₂, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
     return out
 end
