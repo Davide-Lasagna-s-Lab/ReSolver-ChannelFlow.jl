@@ -46,7 +46,7 @@
     @test NSEBase.ddt!(similar(a), a) ≈ project(FFT(VectorField(g, dudt_fun)), Ψ)
 
     # test allocation
-    fun(dx, a, b) = @allocated dx(a, b)
+    fun(dx, a, b) = (dx(a, b); @allocated dx(a, b))
     @test fun(NSEBase.ddx!,       FTField(g), u) == 0
     @test fun(NSEBase.ddy!,       FTField(g), u) == 0
     @test fun(NSEBase.ddz!,       FTField(g), u) == 0

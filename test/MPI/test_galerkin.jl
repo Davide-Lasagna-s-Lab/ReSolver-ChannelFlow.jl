@@ -28,8 +28,6 @@ g = distributed(ChannelGrid(y, Nx, Nz, Nt, α, β, D₁, D₂, D₁⁺, D₂⁺,
 Ny_sb = div(Ny, np)
 
 # generate modes and split among processes
-using Random
-Random.seed!(0)
 M = 5
 Ψ_sb = ntuple(_ -> zeros(ComplexF64, M, Ny_sb, (Nx >> 1) + 1, Nz, Nt), 3)
 if rank == 0
