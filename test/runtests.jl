@@ -16,3 +16,6 @@ include("test_cartesianprimitive.jl")
 
 # MPI tests
 include("MPI/runtests.jl")
+
+# CUDA tests
+include("CUDA/runtests.jl")

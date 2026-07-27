@@ -3,6 +3,9 @@
 # `NSEBase.derivative_matrix` fetches the operator responsible for taking derivatives
 # of `ORDER`th along the inhomogeneous direction `STORAGE_DIM`. It is utilised in the
 # inhomogeneous methods for NSEBase.dd! and NSEBase.laplacian!.
+# 
+# `Adapt.adapt_structure` handles to movement of data from host (CPU) to device (GPU),
+# allowing the use of CUDA kernels for GPU-accelerations.
 
 """
     NSEBase.derivative_matrix(g::AbstractChannelGrid, stor_dim, Val(order), Val(adj))
@@ -37,3 +40,14 @@ NSEBase.derivative_matrix(::AbstractChannelGrid,
                           ::Val{ORDER},
                           ::Val{ADJ}) where {ORDER, ADJ} =
     throw(ArgumentError("only orders 1 and 2 are available, got order=$ORDER"))
+
+
+function Adapt.adapt_structure(to, g::ChannelGrid{S}) where {S}
+    y   = Adapt.adapt_structure(to, g.y)
+    D₁  = Adapt.adapt_structure(to, g.D₁)
+    D₂  = Adapt.adapt_structure(to, g.D₂)
+    D₁⁺ = Adapt.adapt_structure(to, g.D₁⁺)
+    D₂⁺ = Adapt.adapt_structure(to, g.D₂⁺)
+    ws  = Adapt.adapt_structure(to, g.ws)
+    return ChannelGrid{S, Float32}(y, D₁, D₂, D₁⁺, D₂⁺, ws, Float32(g.α), Float32(g.β))
+end
