@@ -8,7 +8,10 @@
 # allowing the use of CUDA kernels for GPU-accelerations.
 
 """
-    NSEBase.derivative_matrix(g::AbstractChannelGrid, stor_dim, Val(order), Val(adj))
+    NSEBase.derivative_matrix(g::AbstractChannelGrid,
+                       stor_dim,
+                      Val(order),
+                           mode::NSEBase.OperatorMode)
 
 Return the wall-normal FD matrix for derivative `order` and adjoint flag `adj`.
 
@@ -22,23 +25,23 @@ kernel throws a `MethodError` at runtime.
 NSEBase.derivative_matrix(g::AbstractChannelGrid,
                            ::Int,
                            ::Val{1},
-                           ::Val{true}) = g.D₁⁺
+                           ::NSEBase.AdjointDiscrete) = g.D₁⁺
 NSEBase.derivative_matrix(g::AbstractChannelGrid,
                            ::Int,
                            ::Val{1},
-                           ::Val{false}) = g.D₁
+                           ::NSEBase.Forward) = g.D₁
 NSEBase.derivative_matrix(g::AbstractChannelGrid,
                            ::Int,
                            ::Val{2},
-                           ::Val{true}) = g.D₂⁺
+                           ::NSEBase.AdjointDiscrete) = g.D₂⁺
 NSEBase.derivative_matrix(g::AbstractChannelGrid,
                            ::Int,
                            ::Val{2},
-                           ::Val{false}) = g.D₂
+                           ::NSEBase.Forward) = g.D₂
 NSEBase.derivative_matrix(::AbstractChannelGrid,
                           ::Int,
                           ::Val{ORDER},
-                          ::Val{ADJ}) where {ORDER, ADJ} =
+                          ::NSEBase.OperatorMode) where {ORDER} =
     throw(ArgumentError("only orders 1 and 2 are available, got order=$ORDER"))
 
 
