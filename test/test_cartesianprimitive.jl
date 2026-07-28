@@ -26,7 +26,7 @@
     w_out_fun(y, x, z, t)  = (d2wdx2_fun(y, x, z, t) + d2wdy2_fun(y, x, z, t) + d2wdz2_fun(y, x, z, t))/Re - u_fun(y, x, z, t)*dwdx_fun(y, x, z, t) - v_fun(y, x, z, t)*dwdy_fun(y, x, z, t) - w_fun(y, x, z, t)*dwdz_fun(y, x, z, t)
 
     # construct grid
-    Ny = 32; Nx = 33; Nz = 33; Nt = 51
+    Ny = 32; Nx = 33; Nz = 33; Nt = 41
     D₁ = chebdiff(Ny)
     D₂ = chebddiff(Ny)
     ws = chebws(Ny)

@@ -1,12 +1,11 @@
-# NSEBase and NSEBaseMPIExt method extensions for AbstractChannelGrid.
+# NSEBase method extensions for AbstractChannelGrid.
 #
-# NSEBase.dd! and NSEBase.inhomogeneous_laplacian! are the hooks NSEBase calls
-# for the inhomogeneous (non-FFT) wall-normal direction. NSEBaseMPIExt.derivative_matrix
-# is the hook NSEBaseMPIExt calls to obtain the local FD matrix for each MPI rank.
-#
-# parent() is unwrapped before every mul! call. FTField does not implement
-# Base.strides, so views of FTField are not recognised as strided arrays by BLAS;
-# unwrapping first ensures mul! dispatches to the FDGrids kernel.
+# `NSEBase.derivative_matrix` fetches the operator responsible for taking derivatives
+# of `ORDER`th along the inhomogeneous direction `STORAGE_DIM`. It is utilised in the
+# inhomogeneous methods for NSEBase.dd! and NSEBase.laplacian!.
+# 
+# `Adapt.adapt_structure` handles to movement of data from host (CPU) to device (GPU),
+# allowing the use of CUDA kernels for GPU-accelerations.
 
 """
     NSEBase.derivative_matrix(g::AbstractChannelGrid, stor_dim, Val(order), Val(adj))
@@ -20,48 +19,35 @@ extension avoids boilerplate: `MPIExt` is a direct dependency and the
 method is always needed for any MPI run. Without it the decomposed derivative
 kernel throws a `MethodError` at runtime.
 """
-function NSEBase.derivative_matrix(g::AbstractChannelGrid,
-                            stor_dim::Int,
-                                    ::Val{ORDER},
-                                    ::Val{ADJ}=Val(false)) where {ORDER, ADJ}
-    # ! is this check necessary since this method is only ever accessed ensuring it is true? (might need to make stor_dim a value type to ensure this)
-    stor_dim == CHANNEL_INHOMOGENEOUS_DIMS[1] ||
-        throw(ArgumentError("storage dimension $stor_dim is not the inhomogeneous channel direction"))
-    ORDER == 1 && return ADJ ? g.D₁⁺ : g.D₁
-    ORDER == 2 && return ADJ ? g.D₂⁺ : g.D₂
+NSEBase.derivative_matrix(g::AbstractChannelGrid,
+                           ::Int,
+                           ::Val{1},
+                           ::Val{true}) = g.D₁⁺
+NSEBase.derivative_matrix(g::AbstractChannelGrid,
+                           ::Int,
+                           ::Val{1},
+                           ::Val{false}) = g.D₁
+NSEBase.derivative_matrix(g::AbstractChannelGrid,
+                           ::Int,
+                           ::Val{2},
+                           ::Val{true}) = g.D₂⁺
+NSEBase.derivative_matrix(g::AbstractChannelGrid,
+                           ::Int,
+                           ::Val{2},
+                           ::Val{false}) = g.D₂
+NSEBase.derivative_matrix(::AbstractChannelGrid,
+                          ::Int,
+                          ::Val{ORDER},
+                          ::Val{ADJ}) where {ORDER, ADJ} =
     throw(ArgumentError("only orders 1 and 2 are available, got order=$ORDER"))
-end
 
-"""
-    NSEBase.dd!(out, u, Val(1); adjoint=false)
 
-Apply the wall-normal first-order finite-difference derivative.
-
-The wall-normal direction is storage dimension `CHANNEL_INHOMOGENEOUS_DIMS[1]`.
-`adjoint=false` applies `D₁`; `adjoint=true` applies `D₁⁺`, the weighted
-discrete adjoint so that `dot(D₁ u, v) == dot(u, D₁⁺ v)` under the
-wall-normal quadrature weights.
-"""
-function NSEBase.inhomogeneous_dd!(out::NSEBase.FTField{G},
-                                     u::NSEBase.FTField{G},
-                                      ::Val{CHANNEL_INHOMOGENEOUS_DIMS[1]};
-                               adjoint::Bool=false) where {G<:AbstractChannelGrid}
-    LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₁⁺ : NSEBase.grid(u).D₁, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
-    return out
-end
-
-"""
-    NSEBase.inhomogeneous_laplacian!(out, u; adjoint=false)
-
-Apply the wall-normal second-order finite-difference operator `∂²/∂y²` in-place.
-
-The homogeneous (streamwise/spanwise/temporal) Fourier contributions are added
-separately by `NSEBase.add_homogeneous_laplacian!`. With `adjoint=true` the
-second-derivative matrix is replaced by its weighted discrete adjoint `D₂⁺`.
-"""
-function NSEBase.inhomogeneous_laplacian!(out::NSEBase.FTField{G},
-                                            u::NSEBase.FTField{G};
-                                      adjoint::Bool=false) where {G<:AbstractChannelGrid}
-    LinearAlgebra.mul!(parent(out), adjoint ? NSEBase.grid(u).D₂⁺ : NSEBase.grid(u).D₂, parent(u), Val(CHANNEL_INHOMOGENEOUS_DIMS[1]))
-    return out
+function Adapt.adapt_structure(to, g::ChannelGrid{S}) where {S}
+    y   = Adapt.adapt_structure(to, g.y)
+    D₁  = Adapt.adapt_structure(to, g.D₁)
+    D₂  = Adapt.adapt_structure(to, g.D₂)
+    D₁⁺ = Adapt.adapt_structure(to, g.D₁⁺)
+    D₂⁺ = Adapt.adapt_structure(to, g.D₂⁺)
+    ws  = Adapt.adapt_structure(to, g.ws)
+    return ChannelGrid{S, Float32}(y, D₁, D₂, D₁⁺, D₂⁺, ws, Float32(g.α), Float32(g.β))
 end
